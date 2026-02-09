@@ -1,0 +1,3511 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Q-Learning: Optimasi Motivasi Siswa</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #0f172a;
+            margin-top: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        button.stop {
+            background-color: var(--danger);
+        }
+
+        button.reset {
+            background-color: var(--secondary);
+        }
+
+        /* Visualization Area */
+        .student-profile {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .metric-box {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            width: 80px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: var(--secondary);
+        }
+
+        .action-display {
+            text-align: center;
+            padding: 20px;
+            background: #eff6ff;
+            border: 2px dashed var(--primary);
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .action-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .reward-tag {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* Math Display */
+        .math-box {
+            background: #1e293b;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .math-highlight {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .variable-desc {
+            font-size: 0.8em;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        /* Heatmap Table */
+        table.heatmap {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+        }
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 4px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f1f5f9;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 30px;
+            line-height: 1.8;
+        }
+
+        .close {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close:hover {
+            transform: scale(1.2);
+        }
+
+        .help-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+            transition: all 0.2s;
+        }
+
+        .help-icon:hover {
+            background: #1d4ed8;
+            transform: scale(1.1);
+        }
+
+        .tooltip {
+            position: relative;
+            border-bottom: 1px dotted var(--primary);
+            cursor: help;
+        }
+
+        .floating-help-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s;
+            z-index: 999;
+            border: none;
+            padding: 0;
+        }
+
+        .floating-help-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.6);
+        }
+
+        .theory-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-left: 5px solid var(--primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .theory-section h3 {
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .research-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .research-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .step-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .formula-box {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            margin: 15px 0;
+            font-size: 1.1em;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            border: 1px solid #1e293b;
+        }
+
+        .glossary-term {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .glossary-term strong {
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .tab-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 12px;
+        }
+
+        .tab {
+            padding: 10px 18px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.1);
+            background: white;
+        }
+
+        .tab.active {
+            color: white;
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Notification System */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 400px;
+        }
+
+        .notification {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            animation: slideInRight 0.4s ease-out;
+            border-left: 4px solid var(--primary);
+            position: relative;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .notification.hiding {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        .notification.info {
+            border-left-color: var(--primary);
+        }
+
+        .notification.success {
+            border-left-color: var(--success);
+        }
+
+        .notification.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .notification.tip {
+            border-left-color: #8b5cf6;
+        }
+
+        .notification-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 4px;
+            color: #0f172a;
+        }
+
+        .notification-message {
+            font-size: 0.85em;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            width: auto;
+            margin: 0;
+            transition: color 0.2s;
+        }
+
+        .notification-close:hover {
+            color: #64748b;
+            background: none;
+        }
+
+        .notification-action {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            cursor: pointer;
+            width: auto;
+            transition: background 0.2s;
+        }
+
+        .notification-action:hover {
+            background: #1d4ed8;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-help-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+        }
+
+        .product-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateX(5px);
+            border-color: #8b5cf6;
+        }
+
+        .product-icon {
+            font-size: 24px;
+            background: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #334155;
+        }
+
+        .product-meta {
+            font-size: 0.8em;
+            color: #64748b;
+        }
+
+        .match-score {
+            font-weight: bold;
+            color: #8b5cf6;
+            font-size: 0.9em;
+        }
+
+        .explanation-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-right: 4px;
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Header Section -->
+    <header
+        style="background-color: #2563eb; padding: 20px; border-bottom: 1px solid #1e40af; margin-bottom: 20px; text-align: center; color: white;">
+        <h1 style="margin: 0; color: white; font-size: 1.8em;">Q-Learning CBF POINTMARKET (Motivational Engine)</h1>
+        <p style="margin: 10px 0 0 0; color: #dbeafe; font-size: 1.05em;">
+            Simulasi adaptif Reinforcement Learning dengan Content-Based Filtering untuk optimasi intervensi pendidikan.
+        </p>
+        <p style="margin: 5px 0 0 0; color: #bfdbfe; font-size: 0.9em;">
+            <strong>Oleh: Muhammad Yusril Helmi Setyawan</strong>
+        </p>
+        <div style="margin-top: 15px;">
+            <a href="infografis_RLCBF.html" target="_blank"
+                style="background: rgba(255,255,255,0.2); color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.85em; transition: background 0.3s;">
+                📊 Lihat Infografis Sistem
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- Left Panel: Controls & Config -->
+        <div class="sidebar">
+            <div class="card">
+                <div class="card-header">🎛️ Panel Kontrol</div>
+                <div class="control-group">
+                    <label>Kecepatan Simulasi: <span id="speedVal">Normal</span></label>
+                    <input type="range" id="speedRange" min="10" max="1000" value="500" style="direction: rtl">
+                </div>
+                <button id="btnStart" onclick="toggleSimulation()">▶ Mulai Simulasi</button>
+                <button id="btnReset" class="reset" onclick="resetSimulation()">↺ Reset Memori (Q-Table)</button>
+
+                <hr>
+
+                <div class="control-group">
+                    <label title="Learning Rate: Seberapa cepat agen menerima informasi baru">Alpha (α) - Learning Rate:
+                        <span id="alphaVal">0.1</span></label>
+                    <input type="range" id="alphaRange" min="0.01" max="1" step="0.01" value="0.1">
+                </div>
+                <div class="control-group">
+                    <label title="Discount Factor: Seberapa penting reward masa depan">Gamma (γ) - Discount Factor:
+                        <span id="gammaVal">0.9</span></label>
+                    <input type="range" id="gammaRange" min="0.1" max="0.99" step="0.01" value="0.9">
+                </div>
+                <div class="control-group">
+                    <label title="Epsilon: Probabilitas eksplorasi (coba-coba)">Epsilon (ε) - Eksplorasi: <span
+                            id="epsilonVal">0.1</span></label>
+                    <input type="range" id="epsilonRange" min="0" max="1" step="0.05" value="0.1">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">📊 Statistik Global</div>
+                <div>Episode: <span id="episodeCount">0</span></div>
+                <div>Langkah Total: <span id="stepCount">0</span></div>
+                <div>Rata-rata Reward: <span id="avgReward">0.00</span></div>
+                <div style="margin-top:10px; font-size: 0.9em; color: #64748b;">
+                    Total States: 144<br>
+                    Total Actions: 5<br>
+                    Q-Table Size: ~2.88 KB
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Visualization -->
+        <div class="main-display">
+            <div class="card">
+                <div class="card-header">🎓 Status Siswa (State St)</div>
+                <div class="student-profile">
+                    <div class="metric-box">
+                        <div class="metric-label">Gaya Belajar</div>
+                        <div class="metric-value" id="dispStyle">Visual</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Level MSLQ</div>
+                        <div class="metric-value" id="dispMot">Low</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Tipe AMS</div>
+                        <div class="metric-value" id="dispPerf">Amotivation</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Engagement</div>
+                        <div class="metric-value" id="dispEng">Stable</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; color: #64748b; font-size: 0.9em;">
+                    Format State: VARK_MSLQ_AMS_Eng<br>
+                    ID State Matematis: <strong id="stateId">0</strong> / 144
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🤖 Keputusan Agen (Action At)</div>
+                <div class="action-display">
+                    <div style="font-size: 0.9em; margin-bottom: 5px;">Agen Memilih Aksi:</div>
+                    <div class="action-title" id="actionName">Monitoring</div>
+                    <div id="rewardBadge" class="reward-tag" style="background: #94a3b8;">Reward: 0</div>
+                    <div id="rewardMathDetail"
+                        style="font-family: 'Courier New', monospace; font-size: 0.75em; margin-top: 8px; color: #475569; background: #fff; padding: 4px; border-radius: 4px; border: 1px dashed #cbd5e1;">
+                        R = (Eng + AMS) - Cost
+                    </div>
+                </div>
+                <p style="text-align: center; font-style: italic;" id="narrative">Menunggu simulasi...</p>
+            </div>
+
+            <!-- New CBF Card -->
+            <div class="card" id="cbfCard" style="border-left: 4px solid #8b5cf6;">
+                <div class="card-header" style="justify-content: flex-start; gap: 10px;">
+                    <span>🛍️ Rekomendasi Produk (Content-Based Filtering)</span>
+                    <span class="tooltip"
+                        title="Sistem ini mencocokkan profil siswa dengan fitur produk menggunakan Cosine Similarity">ℹ️</span>
+                </div>
+
+                <div id="cbfContainer" style="min-height: 100px;">
+                    <p style="color: #64748b; text-align: center; font-style: italic;">Menunggu keputusan agen...</p>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                    <div style="font-size: 0.85em; color: #64748b; margin-bottom: 5px;"><strong>🔍 Explained AI: Mengapa
+                            produk ini?</strong></div>
+                    <div id="cbfExplanation" style="font-size: 0.85em;">
+                        <!-- Vector details go here -->
+                    </div>
+                </div>
+
+                <!-- ADDED: Math Visualization for Cosine Similarity -->
+                <div
+                    style="margin-top: 15px; background: #f0fdfa; padding: 10px; border-radius: 6px; border: 1px solid #ccfbf1;">
+                    <div style="font-size: 0.85em; color: #0f766e; margin-bottom: 5px; font-weight: bold;">📐
+                        Perhitungan Matematis (Cosine Similarity)</div>
+                    <div style="font-family: 'Courier New', monospace; font-size: 0.8em; color: #115e59;">
+                        Sim(User, Item) = (A . B) / (||A|| * ||B||)
+                    </div>
+                    <div id="cbfMathDetail"
+                        style="font-family: 'Courier New', monospace; font-size: 0.75em; margin-top: 5px; white-space: pre-wrap; color: #134e4a;">
+                        <!-- Real-time calculation details -->
+                        Menunggu kalkulasi...
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🧮 Perhitungan Matematis (Update Q-Value)</div>
+                <div class="math-box" id="mathOutput">
+                    Q(s,a) ← (1-α)Q(s,a) + α[r + γ·max Q(s',a')]<br>
+                    Menunggu data...
+                </div>
+                <div class="variable-desc">
+                    Rumus ini mengupdate nilai "kebaikan" (Q-value) dari aksi yang baru saja diambil berdasarkan reward
+                    yang didapat + prediksi masa depan.
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Graphs -->
+        <div class="charts">
+            <div class="card">
+                <div class="card-header">📈 Grafik Konvergensi</div>
+                <canvas id="rewardChart" width="260" height="200"></canvas>
+                <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">
+                    Sumbu Y: Total Reward per 20 Episode.<br>
+                    Garis naik = Agen makin pintar.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🧠 Strategi AI Agent (Q-Table Slice)</div>
+                <p style="font-size: 0.8em;">Sampel Kebijakan untuk Gaya Belajar: <strong
+                        id="tableStyleTarget">Visual</strong></p>
+                <table class="heatmap" id="qTableVis">
+                    <thead>
+                        <tr>
+                            <th>AMS Type</th>
+                            <th>Rwd</th>
+                            <th>Mis</th>
+                            <th>Buy</th>
+                            <th>Pun</th>
+                            <th>Cch</th>
+                        </tr>
+                    </thead>
+                    <tbody id="qTableBody">
+                        <!-- Rows generated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Floating Help Button -->
+    <button class="floating-help-btn" onclick="openHelpModal()" title="Bantuan & Penjelasan Teori">
+        ?
+    </button>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📚 Panduan & Teori Q-Learning</h2>
+                <span class="close" onclick="closeHelpModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="tab-container">
+                    <button class="tab active" onclick="switchTab('overview', this)">🏠 Overview</button>
+                    <button class="tab" onclick="switchTab('theory', this)">📖 Teori RL</button>
+                    <button class="tab" onclick="switchTab('math', this)">🧮 4 Rumus Utama</button>
+                    <button class="tab" onclick="switchTab('params', this)">⚙️ Parameter</button>
+                    <button class="tab" onclick="switchTab('glossary', this)">📗 Glossary</button>
+                    <button class="tab" onclick="switchTab('ui', this)">💻 Panduan UI</button>
+                    <button class="tab" onclick="switchTab('cbf', this)">🛍️ Rekomendasi (CBF)</button>
+                    <button class="tab" onclick="switchTab('study', this)">🎓 Cara Belajar</button>
+                    <button class="tab" onclick="switchTab('research', this)">🔬 Rencana Riset Lanjutan</button>
+                    <button class="tab" onclick="switchTab('roadmap', this)">📅 Roadmap 2027-2030</button>
+                    <button class="tab" onclick="switchTab('refs', this)">📚 Referensi Ilmiah</button>
+                </div>
+
+                <!-- Tab: Research Notes -->
+                <div id="research-tab" class="tab-content">
+                    <div class="theory-section" style="border-left-color: #f43f5e; background: #fff1f2;">
+                        <h3>🔬 Rencana Riset Lanjutan & Expert Judgment</h3>
+                        <p>Simulasi ini adalah fondasi awal. Berikut adalah peta jalan riset lanjutan untuk memvalidasi
+                            dan mengembangkan model ini ke tingkat yang lebih tinggi.</p>
+
+                        <!-- Pillar 1: Sensing -->
+                        <div class="research-card" style="border-left: 4px solid #16a34a; background: #f0fdf4;">
+                            <h4 style="color: #166534; margin-top:0;">📡 [P1] METODE SENSING (Data-Driven)</h4>
+                            <p style="font-size: 0.9em; margin-bottom: 10px;"><strong>Prioritas 1:</strong> Fokus pada
+                                deteksi status internal siswa secara non-intrusif (tanpa kuesioner).</p>
+                            <ul style="font-size: 0.85em; margin-bottom:0;">
+                                <li><strong>[P1.1] Behavioral Feature Engineering:</strong> Tahap awal: Proses mengubah
+                                    log aktivitas (durasi, klik) menjadi fitur numerik. <br><em
+                                        style="color: #059669;">Luaran: Dataset Log Perilaku Terfragmentasi.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Korelasi fitur v.s
+                                        kuesioner (r > 0.6).</span>
+                                </li>
+                                <li><strong>[P1.2] Latent Motivation Estimation:</strong> Tahap permodelan: Teknik
+                                    estimasi status mental tersembunyi berdasarkan fitur perilaku. <br><em
+                                        style="color: #059669;">Luaran: Algoritma Inferensi Probabilistik
+                                        (Bayesian/RNN).</em> <br><span style="font-size: 0.8em; color: #666;">📌
+                                        Indikator: Akurasi estimasi (MAE < 0.15).</span>
+                                </li>
+                                <li><strong>[P1.3] Implicit Inference & Hybrid Strategy:</strong> Tahap implementasi:
+                                    Otomatisasi sensing dengan kuesioner hanya sebagai validasi awal. <br><em
+                                        style="color: #059669;">Luaran: Modul API Sensing Otomatis Real-time.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Latensi sistem <
+                                            200ms.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Pillar 2: Math/Model -->
+                        <div class="research-card" style="border-left: 4px solid #be123c;">
+                            <h4 style="color: #be123c; margin-top:0;">📐 [P2] PENGEMBANGAN MODEL (Math & Model)</h4>
+                            <p style="font-size: 0.9em; margin-bottom: 10px;"><strong>Prioritas 2:</strong> Validasi
+                                matematis fungsi reward dan perluasan kompleksitas algoritma.</p>
+                            <ul style="font-size: 0.85em; margin-bottom:0;">
+                                <li><strong>[P2.1] Expert Survey & Calibration:</strong> Survei pakar untuk menetapkan
+                                    nilai "Bobot & Harga" aksi agar sesuai realita. <br><em
+                                        style="color: #9f1239;">Luaran: Dokumen Rekomendasi Bobot & Cost (Validasi
+                                        Pakar).</em> <br><span style="font-size: 0.8em; color: #666;">📌 Indikator:
+                                        Content Validity Index (CVI) > 0.80.</span></li>
+                                <li><strong>[P2.2] Signifikansi AMS Jumps:</strong> Validasi psikopedagogi terhadap
+                                    bonus <strong>+1.0</strong> pada kenaikan level motivasi. <br><em
+                                        style="color: #9f1239;">Luaran: Naskah Akademik Validasi Psikometrik AMS.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Signifikansi
+                                        statistik (p < 0.05).</span>
+                                </li>
+                                <li><strong>[P2.3] Granularitas State Space:</strong> Ekspansi dimensi state dengan
+                                    menyertakan variabel Mood atau tingkat kesulitan soal. <br><em
+                                        style="color: #9f1239;">Luaran: Skema State-Space Multi-Dimensi
+                                        (Mood/Level).</em> <br><span style="font-size: 0.8em; color: #666;">📌
+                                        Indikator: Peningkatan konvergensi agen > 20%.</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- Pillar 3: Logic/CBF -->
+                        <div class="research-card" style="border-left: 4px solid #7c3aed; background: #f5f3ff;">
+                            <h4 style="color: #4c1d95; margin-top:0;">🧠 [P3] SISTEM CERDAS (Pedagogical Logic)</h4>
+                            <p style="font-size: 0.9em; margin-bottom: 10px;"><strong>Prioritas 3:</strong> Optimalisasi
+                                logika rekomendasi produk dan profil gaya belajar.</p>
+                            <ul style="font-size: 0.85em; margin-bottom:0;">
+                                <li><strong>[P3.1] Multimodal VARK Profiling:</strong> Pengembangan profil gaya belajar
+                                    yang tidak kaku (kombinasi proporsional V-A-R-K). <br><em
+                                        style="color: #5b21b6;">Luaran: Algoritma Profiling VARK Proporsional.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Skor diversitas
+                                        rekomendasi (Entropy > 0.7).</span>
+                                </li>
+                                <li><strong>[P3.2] CBF Economic Calibration:</strong> Penyesuaian variabel ekonomi agar
+                                    harga produk tetap inklusif bagi seluruh level poin. <br><em
+                                        style="color: #5b21b6;">Luaran: Kebijakan Tokenomics Kelas Jangka Panjang.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Gini Coefficient Poin
+                                        < 0.3.</span>
+                                </li>
+                                <li><strong>[P3.3] Neuro-Symbolic Integration:</strong> Penggabungan model RL
+                                    probabilistik dengan aturan pedagogi simbolik kaku. <br><em
+                                        style="color: #5b21b6;">Luaran: Framework Integrasi Logika-RL
+                                        (Neuro-Symbolic).</em> <br><span style="font-size: 0.8em; color: #666;">📌
+                                        Indikator: 0% pelanggaran aturan pedagogis.</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- Pillar 4: Human/Ethical -->
+                        <div class="research-card" style="border-left: 4px solid #0891b2; background: #ecfeff;">
+                            <h4 style="color: #155e75; margin-top:0;">🤝 [P4] KOLABORASI & ETIKA (Human-in-the-Loop)
+                            </h4>
+                            <p style="font-size: 0.9em; margin-bottom: 10px;"><strong>Prioritas 4:</strong> Menjaga agar
+                                AI tetap bertindak dalam koridor kemanusiaan dan keadilan.</p>
+                            <ul style="font-size: 0.85em; margin-bottom:0;">
+                                <li><strong>[P4.1] Ethical Constraint Integration:</strong> Mengunci aturan moral kaku
+                                    ke dalam kode (misal: dilarang menghukum di kondisi Amotivation). <br><em
+                                        style="color: #0e7490;">Luaran: Library Safety-Constraints untuk Agen RL.</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: Lolos uji penetrasi
+                                        etika (100% Safety).</span>
+                                </li>
+                                <li><strong>[P4.2] Teacher-in-the-Loop Override:</strong> Pengembangan UI agar guru
+                                    dapat langsung mengintervensi keputusan AI secara real-time. <br><em
+                                        style="color: #0e7490;">Luaran: Dashboard Intervensi Guru (TITL Interface).</em>
+                                    <br><span style="font-size: 0.8em; color: #666;">📌 Indikator: System Usability
+                                        Scale (SUS) > 75.</span>
+                                </li>
+                                <li><strong>[P4.3] Fairness-Aware RL:</strong> Algoritma distribusi perhatian adil untuk
+                                    seluruh spektrum kemampuan siswa. <br><em style="color: #0e7490;">Luaran: Matriks
+                                        Evaluasi Keadilan Distribusi Reward.</em> <br><span
+                                        style="font-size: 0.8em; color: #666;">📌 Indikator: Perbedaan rata-rata reward
+                                        antar-kelompok < 15%.</span>
+                                </li>
+                            </ul>
+                            <!-- Quality Assurance: SMART Standard -->
+                            <div
+                                style="margin-top: 25px; padding: 15px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                                <h5
+                                    style="margin-top: 0; color: #475569; display: flex; align-items: center; gap: 8px;">
+                                    ✅ Roadmap Tervalidasi Standar SMART
+                                </h5>
+                                <div
+                                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; font-size: 0.8em; color: #64748b; line-height: 1.4;">
+                                    <div><strong>Specific:</strong> Pilar P1-P4 memiliki fokus target luaran yang unik
+                                        dan tidak tumpang tindih.</div>
+                                    <div><strong>Measurable:</strong> Keberhasilan diukur melalui KPI kuantitatif (CVI,
+                                        p-value, MAE, SUS).</div>
+                                    <div><strong>Achievable:</strong> Tahapan disusun sekuensial (Sensing & Model harus
+                                        mapan sebelum Logic & Ethics).</div>
+                                    <div><strong>Relevant:</strong> Seluruh pilar mendukung tujuan utama: Optimasi
+                                        Pedagogis berbasis RL.</div>
+                                    <div><strong>Time-bound:</strong> Prioritas P1-P4 memberikan panduan urutan waktu
+                                        pelaksanaan riset.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Strategic Roadmap -->
+                <div id="roadmap-tab" class="tab-content">
+                    <div class="theory-section" style="border-left-color: #0ea5e9; background: #f0f9ff;">
+                        <h3>📅 Roadmap Strategis Riset (2027 - 2030)</h3>
+                        <p>Peta jalan transisi dari simulasi laboratorium menuju implementasi ekosistem cerdas di
+                            sekolah nyata.</p>
+
+                        <!-- 2027 -->
+                        <div class="roadmap-year"
+                            style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 5px solid #16a34a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="color: #16a34a; margin: 0 0 10px 0;">🚀 2027: Foundation & Sensing (P1)</h4>
+                            <p style="font-size: 0.95em; color: #4b5563;"><strong>Fokus Utama:</strong> Penyelesaian
+                                masalah data (Implicit Sensing) dan validasi dasar model.</p>
+                            <ul style="font-size: 0.9em; line-height: 1.6;">
+                                <li><strong>Aktivitas Utama:</strong> Implementasi Feature Engineering [P1.1],
+                                    Estimasi Mental [P1.2], dan Survei Pakar [P2.1].</li>
+                                <li><strong>Target Luaran:</strong> Modul Sensing yang akurat tanpa kuesioner
+                                    harian.</li>
+                                <li><strong style="color: #059669;">🤖 Prediksi Situasi:</strong> Di tahun ini,
+                                    <em>Edge
+                                        Computing</em> pada perangkat siswa akan memungkinkan sensing emosi
+                                    real-time tanpa delay cloud.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- 2028 -->
+                        <div class="roadmap-year"
+                            style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 5px solid #7c3aed; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="color: #7c3aed; margin: 0 0 10px 0;">🧠 2028: Smart Logic & Profiling (P3)
+                            </h4>
+                            <p style="font-size: 0.95em; color: #4b5563;"><strong>Fokus Utama:</strong>
+                                Personalisasi konten bimbingan melalui CBF dan VARK multimodal.</p>
+                            <ul style="font-size: 0.9em; line-height: 1.6;">
+                                <li><strong>Aktivitas Utama:</strong> Strategi Hybrid P1.3, Automasi Profiling P3.1,
+                                    dan Kalibrasi Ekonomi Token P3.2.</li>
+                                <li><strong>Target Luaran:</strong> Mesin marketplace yang adaptif terhadap
+                                    perubahan motivasi siswa setiap detiknya.</li>
+                                <li><strong style="color: #7c3aed;">🤖 Prediksi Situasi:</strong> Dominasi
+                                    <em>Generative
+                                        AI</em> dalam modul belajar. Produk marketplace tidak lagi statis, tapi
+                                    modul yang dihasilkan AI secara On-Demand.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- 2029 -->
+                        <div class="roadmap-year"
+                            style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 5px solid #be123c; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="color: #be123c; margin: 0 0 10px 0;">🛡️ 2029: Governance & Complexity
+                                (P2-P4)</h4>
+                            <p style="font-size: 0.95em; color: #4b5563;"><strong>Fokus Utama:</strong> Perluasan
+                                dimensi state dan penguncian batasan etika kaku.</p>
+                            <ul style="font-size: 0.9em; line-height: 1.6;">
+                                <li><strong>Aktivitas Utama:</strong> Validasi psikopedagogi P2.2, Ekspansi State
+                                    P2.3, dan Library Safety P4.1.</li>
+                                <li><strong>Target Luaran:</strong> Agen RL yang tervalidasi secara klinis/pedagogis
+                                    dan aman dari tindakan malpraktik digital.</li>
+                                <li><strong style="color: #be123c;">🤖 Prediksi Situasi:</strong> Munculnya regulasi
+                                    <em>Trustworthy AI</em> global. Riset XAI (Explainable AI) menjadi wajib agar
+                                    guru paham alasan setiap saran AI.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- 2030 -->
+                        <div class="roadmap-year"
+                            style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 5px solid #0891b2; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="color: #0891b2; margin: 0 0 10px 0;">🤝 2030: Synergy & Global Fairness (P4)
+                            </h4>
+                            <p style="font-size: 0.95em; color: #4b5563;"><strong>Fokus Utama:</strong> Koleborasi
+                                penuh guru-AI dan pemerataan keadilan pendidikan.</p>
+                            <ul style="font-size: 0.9em; line-height: 1.6;">
+                                <li><strong>Aktivitas Utama:</strong> Integrasi Neuro-Symbolic P3.3, Interface TITL
+                                    P4.2, dan Matriks Keadilan P4.3.</li>
+                                <li><strong>Target Luaran:</strong> Ekosistem sekolah cerdas yang inklusif dan
+                                    transparan (Human-AI Teaming).</li>
+                                <li><strong style="color: #0891b2;">🤖 Prediksi Situasi:</strong> Peralihan dari AI
+                                    asisten menjadi <em>Pedagogical Partner</em> berbasis data bukti (Evidence-based
+                                    intervention) di level global.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Section: Research Infrastructure & Compliance -->
+                    <div
+                        style="background: #1e293b; color: #f8fafc; padding: 25px; border-radius: 12px; border-top: 6px solid #fbbf24; margin-top: 20px;">
+                        <h3 style="color: #fbbf24; margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                            🏛️ Prasyarat & Validasi Ekosistem Riset</h3>
+                        <p style="font-size: 0.9em; color: #94a3b8;">Untuk memvalidasi temuan riset ini ke dunia
+                            nyata, berikut adalah spesifikasi sumber daya (Resources) dan kepatuhan (Compliance)
+                            yang direncanakan untuk dipenuhi:</p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                            <!-- Experts -->
+                            <div
+                                style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                                <h5 style="color: #38bdf8; margin: 0 0 10px 0;">👥 Konsorsium Tenaga Ahli</h5>
+                                <ul style="font-size: 0.85em; padding-left: 15px; color: #cbd5e1; line-height: 1.6;">
+                                    <li><strong>AI/RL Scientists:</strong> Pemodelan Markov Decision Process &
+                                        Q-Table.</li>
+                                    <li><strong>Psikometrika:</strong> Pakar validasi instrumen mental (MSLQ/AMS).
+                                    </li>
+                                    <li><strong>Pedagogical SMEs:</strong> Ahli kurikulum untuk kontrol intervensi.
+                                    </li>
+                                    <li><strong>Ethics Specialist:</strong> Pengawas privasi & bias algoritma.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Data & Object -->
+                            <div
+                                style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                                <h5 style="color: #4ade80; margin: 0 0 10px 0;">📊 Obyek & Kebutuhan Data</h5>
+                                <ul style="font-size: 0.85em; padding-left: 15px; color: #cbd5e1; line-height: 1.6;">
+                                    <li><strong>Subjek:</strong> Minimal 300 siswa per jenjang (K-12/PT).</li>
+                                    <li><strong>Log Perilaku:</strong> Dataset interaksi minimal 1 semester.</li>
+                                    <li><strong>Tools:</strong> Integrasi LMS (Moodle/Canvas) & Mobile Apps.</li>
+                                    <li><strong>Infra:</strong> Cloud GPU Cluster untuk training ulang model.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Official Testing -->
+                            <div
+                                style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                                <h5 style="color: #f472b6; margin: 0 0 10px 0;">🛡️ Validasi Lembaga Resmi</h5>
+                                <ul style="font-size: 0.85em; padding-left: 15px; color: #cbd5e1; line-height: 1.6;">
+                                    <li><strong>IRB/Komite Etik:</strong> Kelayakan perlakuan pada manusia.</li>
+                                    <li><strong>Pusdatin Kemendikbud:</strong> Sertifikasi keselarasan SNP.</li>
+                                    <li><strong>BSSN:</strong> Audit keamanan data & privasi (UU PDP).</li>
+                                    <li><strong>HKI:</strong> Paten algoritma & hak cipta modul software.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Scientific References -->
+            <div id="refs-tab" class="tab-content">
+                <div class="theory-section" style="border-left-color: #6366f1; background: #f5f3ff;">
+                    <h3>📚 Landasan Teoretis & Referensi Ilmiah</h3>
+                    <p>Simulasi ini dibangun di atas fondasi literatur akademik yang mapan di bidang AI,
+                        Psikologi
+                        Pendidikan, dan Rekayasa Sistem.</p>
+
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px;">
+                        <!-- Category: Pedagogy -->
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h5 style="color: #4f46e5; margin: 0 0 10px 0;">🧠 Psikologi & Motivasi Belajar
+                                (State
+                                Space)
+                            </h5>
+                            <ul style="font-size: 0.85em; color: #4b5563; line-height: 1.6; padding-left: 20px;">
+                                <li><strong>MSLQ:</strong> Pintrich, P. R., Smith, D. A., Garcia, T., &
+                                    McKeachie,
+                                    W. J.
+                                    (1991). <em>A manual for the use of the Motivated Strategies for
+                                        Learning
+                                        Questionnaire
+                                        (MSLQ)</em>. National Center for Research to Improve Postsecondary
+                                    Teaching
+                                    and
+                                    Learning.</li>
+                                <li><strong>AMS:</strong> Vallerand, R. J., et al. (1992). <em>The Academic
+                                        Motivation
+                                        Scale: A measure of intrinsic, extrinsic, and amotivation in
+                                        education</em>.
+                                    Educational and Psychological Measurement.</li>
+                                <li><strong>VARK:</strong> Fleming, N. D. (2001). <em>Teaching and learning
+                                        styles:
+                                        VARK
+                                        strategies</em>. Christchurch, New Zealand.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Category: AI/RL -->
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h5 style="color: #0891b2; margin: 0 0 10px 0;">🤖 Reinforcement Learning &
+                                Machine
+                                Learning
+                            </h5>
+                            <ul style="font-size: 0.85em; color: #4b5563; line-height: 1.6; padding-left: 20px;">
+                                <li><strong>Q-Learning:</strong> Sutton, R. S., & Barto, A. G. (2018).
+                                    <em>Reinforcement
+                                        Learning: An Introduction</em>. MIT Press.
+                                </li>
+                                <li><strong>RL in Education:</strong> Doroudi, S. (2020). <em>The building
+                                        blocks of
+                                        adaptive learning systems</em>. Journal of Learning Analytics.</li>
+                                <li><strong>CBF Matrix:</strong> Salton, G., & McGill, M. J. (1983).
+                                    <em>Introduction to
+                                        modern information retrieval</em>. McGraw-Hill.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Category: Ethics -->
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h5 style="color: #be123c; margin: 0 0 10px 0;">🛡️ Etika & Tata Kelola Riset AI
+                                (Pillar P4)
+                            </h5>
+                            <ul style="font-size: 0.85em; color: #4b5563; line-height: 1.6; padding-left: 20px;">
+                                <li><strong>Trustworthy AI:</strong> European Commission (2019). <em>Ethics
+                                        guidelines for trustworthy AI</em>.</li>
+                                <li><strong>Explainable AI (XAI):</strong> Arrieta, A. B., et al. (2020).
+                                    <em>Explainable Artificial Intelligence (XAI): Concepts, taxonomies,
+                                        opportunities and challenges toward responsible AI</em>. Information
+                                    Fusion.
+                                </li>
+                                <li><strong>Data Privacy:</strong> UU No. 27 Tahun 2022 tentang Perlindungan
+                                    Data
+                                    Pribadi (Indonesia PDP Law).</li>
+                            </ul>
+                        </div>
+
+                        <!-- Category: Recent High-Impact (2021-2025) -->
+                        <div style="background: #fdf2f8; padding: 15px; border-radius: 8px; border: 1px solid #fbcfe8;">
+                            <h5 style="color: #db2777; margin: 0 0 10px 0;">🌐 Publikasi Internasional Terkini
+                                (2021-2025)</h5>
+                            <ul style="font-size: 0.85em; color: #4b5563; line-height: 1.6; padding-left: 20px;">
+                                <li><strong>RL Systematic Review (2025):</strong> Riedmann, A., Schaper, P., &
+                                    Lugrin, B. (2025). <em>Reinforcement Learning in Education: A Systematic
+                                        Literature Review</em>. <strong>International Journal of Artificial
+                                        Intelligence in Education (IJAIED)</strong>.</li>
+                                <li><strong>Generative AI & Motivation (2025):</strong> Hwang, G. J., et al.
+                                    (2025).
+                                    <em>Enhancing flipped classroom models with generative AI: insights from
+                                        sequential analysis</em>. <strong>Computers & Education: Artificial
+                                        Intelligence</strong>.
+                                </li>
+                                <li><strong>DRL & Decision Support (2025):</strong> Jia, W., & Li, Z. (2025).
+                                    <em>Fusion of Deep Reinforcement Learning & EDM for Intelligent Decision
+                                        Support</em>.
+                                    <strong>Information (MDPI)</strong>, 16(12).
+                                </li>
+                                <li><strong>Engagement Optimization (2024):</strong> Hwang, G. J., et al.
+                                    (2024).
+                                    <em>Elevating learners’ positive behaviors: A motivation model-based digital
+                                        gaming approach</em>. <strong>British Journal of Educational
+                                        Technology (BJET)</strong>.
+                                </li>
+                                <li><strong>GenAI & Learning Analytics (2024):</strong> Yan, L.,
+                                    Martinez-Maldonado,
+                                    R., & Gašević, D. (2024). <em>Generative AI in Learning Analytics:
+                                        Opportunities and Challenges</em>. <strong>Journal of Learning
+                                        Analytics</strong>, 11(1).</li>
+                                <li><strong>LLM for Personalization (2024):</strong> Authors explore leveraging
+                                    LLMs
+                                    to create adaptive environments for the "whole learner" supporting cognitive
+                                    & non-cognitive traits. <strong>Frontiers in Artificial
+                                        Intelligence</strong>.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top: 20px; font-size: 0.8em; color: #94a3b8; font-style: italic; text-align: center;">
+                        *Referensi ini digunakan sebagai parameter dasar simulasi dan dapat dikembangkan
+                        lebih
+                        lanjut dalam
+                        penulisan naskah akademik/jurnal.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: CBF Explanation -->
+            <div id="cbf-tab" class="tab-content">
+                <div class="theory-section">
+                    <h3>🛍️ Sistem Rekomendasi Produk (Content-Based Filtering)</h3>
+                    <p>Selain menentukan strategi intervensi (Aksi), simulasi ini juga dilengkapi dengan
+                        mesin
+                        rekomendasi yang menyarankan produk/layanan spesifik yang relevan dengan kondisi
+                        siswa.
+                    </p>
+
+                    <div style="background: #f0fdfa; border-left: 4px solid #0d9488; padding: 15px; margin: 15px 0;">
+                        <strong>Prinsip Utama:</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.95em;">
+                            Sistem mencocokkan <strong>Profil Siswa (User Vector)</strong> dengan
+                            <strong>Fitur
+                                Produk (Item Vector)</strong> menggunakan perhitungan matematis untuk
+                            mencari
+                            kemiripan tertinggi.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📐 Vektor Fitur (6 Dimensi)</h3>
+                    <p>Setiap Siswa dan Produk dipetakan ke dalam 6 dimensi angka (0.0 - 1.0):</p>
+                    <ul style="line-height: 1.6;">
+                        <li><strong>V (Visual):</strong> Kecocokan dengan gaya belajar visual.</li>
+                        <li><strong>A (Auditory):</strong> Kecocokan dengan gaya belajar audio.</li>
+                        <li><strong>R (Read/Write):</strong> Kecocokan dengan teks/bacaan.</li>
+                        <li><strong>K (Kinesthetic):</strong> Kecocokan dengan praktik langsung.</li>
+                        <li><strong>Mot (Motivation Booster):</strong> Seberapa kuat produk memotivasi.</li>
+                        <li><strong>$ (Price/Spending Power):</strong> Kesesuaian harga dengan daya beli
+                            siswa
+                            saat
+                            ini.</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section" style="background: #f0f9ff; border-left-color: #3b82f6;">
+                    <h3>🏗️ Pembentukan Vektor User (A)</h3>
+                    <p>Bagaimana sistem menerjemahkan kondisi siswa menjadi angka vector <strong>A</strong>?
+                        Berikut
+                        detail logikanya:</p>
+
+                    <h4 style="margin-bottom: 5px; color: #1e40af;">1. VARK (4 Dimensi Pertama)</h4>
+                    <p style="margin-top: 0; font-size: 0.9em;">Menggunakan <em>Weighted One-Hot
+                            Encoding</em>
+                        (bukan 0/1 mutlak agar tidak terlalu kaku).</p>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li><strong>Gaya Belajar Dominan:</strong> Diberi nilai <strong>0.9</strong></li>
+                        <li><strong>Gaya Lainnya:</strong> Diberi nilai dasar <strong>0.1</strong></li>
+                        <li><em>Contoh:</em> Siswa Visual → <code>[0.9, 0.1, 0.1, 0.1]</code></li>
+                    </ul>
+
+                    <h4 style="margin-bottom: 5px; color: #1e40af;">2. Motivasi (Dimensi ke-5)</h4>
+                    <p style="margin-top: 0; font-size: 0.9em;">Normalisasi Level MSLQ (0-2) ke skala 0.0 -
+                        1.0
+                        dengan rumus <code>(Level + 1) / 3</code>.</p>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li>Low (0) → <strong>0.33</strong></li>
+                        <li>Medium (1) → <strong>0.66</strong></li>
+                        <li>High (2) → <strong>1.0</strong></li>
+                    </ul>
+
+                    <h4 style="margin-bottom: 5px; color: #1e40af;">3. Spending Power (Dimensi ke-6)</h4>
+                    <p style="margin-top: 0; font-size: 0.9em;">Dinamis bergantung pada <strong>Aksi
+                            Agen</strong>
+                        terakhir. Karena simulasi ini tidak menyimpan saldo poin absolut, kita menggunakan
+                        pendekatan heuristik (kira-kira):</p>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li><strong>Base Value: 0.5</strong> → Asumsi nilai tengah (netral/saldo cukup).
+                            Sistem
+                            menganggap kondisi "normal" siswa memiliki kemampuan beli rata-rata (skala 0.0 -
+                            1.0).
+                        </li>
+                        <li><strong>Aksi Reward (101):</strong> +0.3 → <strong>0.8</strong> (Daya beli naik
+                            drastis
+                            karena baru dapat insentif/poin).</li>
+                        <li><strong>Aksi Beli (102):</strong> -0.2 → <strong>0.3</strong> (Daya beli turun
+                            karena
+                            poin baru saja dibelanjakan).</li>
+                    </ul>
+                    <div
+                        style="margin-top: 10px; font-size: 0.85em; background: #fffbeb; padding: 10px; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                        <strong>❓ Mengapa aksi lain tidak dihitung?</strong>
+                        <ul style="margin: 5px 0 0 15px; padding: 0;">
+                            <li><strong>Misi (105):</strong> Bersifat penugasan. Poin baru didapat
+                                <em>setelah</em>
+                                misi selesai (masa depan), jadi belum mempengaruhi saldo saat ini.
+                            </li>
+                            <li><strong>Hukuman (103):</strong> Secara teknis mengurangi poin, namun dalam
+                                rekomendasi produk, kita fokus pada opsi positif. Hukuman dianggap
+                                menurunkan
+                                akses
+                                belanja (netral rendah) jadi tidak perlu penyesuaian khusus.</li>
+                            <li><strong>Konsultasi (106):</strong> Layanan jasa guru yang tidak melibatkan
+                                transaksi
+                                poin langsung (gratis/netral).</li>
+                        </ul>
+                    </div>
+
+                    <div
+                        style="background: white; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1; margin-top: 10px; font-size: 0.85em;">
+                        <strong>Contoh Kasus:</strong><br>
+                        Siswa <em>Visual</em>, Motivasi <em>High</em>, baru dapat <em>Reward</em>.<br>
+                        <strong>Vektor A = [0.9, 0.1, 0.1, 0.1, 1.0, 0.8]</strong>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🧮 Rumus: Cosine Similarity</h3>
+                    <p>Untuk menghitung skor kemiripan (0% - 100%), digunakan rumus Cosine Similarity:</p>
+
+                    <div class="formula-box" style="font-size: 1.1em; padding: 20px;">
+                        Similarity = (A . B) / (||A|| * ||B||)
+                    </div>
+
+                    <p><strong>Dimana:</strong></p>
+                    <ul>
+                        <li><strong>A . B (Dot Product):</strong> Perkalian setiap elemen vektor. Semakin
+                            banyak
+                            fitur yang cocok (tinggi * tinggi), semakin besar nilainya.</li>
+                        <li><strong>||A|| & ||B|| (Magnitude):</strong> Panjang vektor (akar dari jumlah
+                            kuadrat
+                            elemen). Digunakan sebagai pembagi agar skor ternormalisasi menjadi -1 s.d 1.
+                        </li>
+                    </ul>
+
+                    <div
+                        style="background: #fffbe6; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9em;">
+                        <strong>Contoh Kasus:</strong><br>
+                        Siswa <em>Visual</em> (V=0.9) akan memiliki skor tinggi dengan produk <em>Video
+                            Tutorial</em> (V=0.9) karena perkalian 0.9 * 0.9 = 0.81 (Sangat Besar).<br>
+                        Sebaliknya, skor akan rendah dengan <em>Podcast</em> (V=0.1) karena 0.9 * 0.1 = 0.09
+                        (Kecil).
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📦 Database Produk & Nilai Fitur</h3>
+                    <p>Berikut adalah daftar lengkap produk dalam database sistem beserta nilai vektor
+                        fiturnya
+                        (0.0
+                        - 1.0):</p>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: center;">
+                        <thead>
+                            <tr style="background: #e2e8f0; border-bottom: 2px solid #cbd5e1;">
+                                <th style="padding: 6px; text-align: left;">Produk</th>
+                                <th style="padding: 6px;" title="Visual">V</th>
+                                <th style="padding: 6px;" title="Auditory">A</th>
+                                <th style="padding: 6px;" title="Read/Write">R</th>
+                                <th style="padding: 6px;" title="Kinesthetic">K</th>
+                                <th style="padding: 6px;" title="Motivation Booster">Mot</th>
+                                <th style="padding: 6px;" title="Price / Cost">$</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: left; padding: 4px;">🎥 Video Tutorial</td>
+                                <td>0.9</td>
+                                <td>0.8</td>
+                                <td>0.2</td>
+                                <td>0.1</td>
+                                <td>0.7</td>
+                                <td>0.4</td>
+                            </tr>
+                            <tr style="background: #f8fafc;">
+                                <td style="text-align: left; padding: 4px;">📚 E-Book Intr.</td>
+                                <td>0.6</td>
+                                <td>0.1</td>
+                                <td>0.9</td>
+                                <td>0.2</td>
+                                <td>0.5</td>
+                                <td>0.3</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; padding: 4px;">🎧 Podcast Ahli</td>
+                                <td>0.1</td>
+                                <td>0.9</td>
+                                <td>0.3</td>
+                                <td>0.1</td>
+                                <td>0.6</td>
+                                <td>0.3</td>
+                            </tr>
+                            <tr style="background: #f8fafc;">
+                                <td style="text-align: left; padding: 4px;">🔧 Kit Praktikum</td>
+                                <td>0.7</td>
+                                <td>0.1</td>
+                                <td>0.2</td>
+                                <td>0.9</td>
+                                <td>0.8</td>
+                                <td>0.8</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; padding: 4px;">👨‍🏫 Mentoring</td>
+                                <td>0.5</td>
+                                <td>0.9</td>
+                                <td>0.4</td>
+                                <td>0.3</td>
+                                <td>0.9</td>
+                                <td>0.9</td>
+                            </tr>
+                            <tr style="background: #f8fafc;">
+                                <td style="text-align: left; padding: 4px;">🎴 Flashcard</td>
+                                <td>0.8</td>
+                                <td>0.2</td>
+                                <td>0.7</td>
+                                <td>0.3</td>
+                                <td>0.5</td>
+                                <td>0.2</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; padding: 4px;">⭐ Badge "Star"</td>
+                                <td>0.8</td>
+                                <td>0.1</td>
+                                <td>0.1</td>
+                                <td>0.1</td>
+                                <td>0.9</td>
+                                <td>0.1</td>
+                            </tr>
+                            <tr style="background: #f8fafc;">
+                                <td style="text-align: left; padding: 4px;">🍔 Voucher Makan</td>
+                                <td>0.2</td>
+                                <td>0.2</td>
+                                <td>0.2</td>
+                                <td>0.5</td>
+                                <td>0.8</td>
+                                <td>0.5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="font-size: 0.8em; color: #64748b; margin-top: 5px;">*Nilai tinggi berarti
+                        produk
+                        tersebut sangat cocok untuk fitur tersebut.</p>
+                </div>
+
+                <div class="theory-section" style="border-left-color: #8b5cf6; background: #f5f3ff;">
+                    <h3>📝 Panduan Penetapan Nilai Vektor (Expert Labeling)</h3>
+                    <p>Bagaimana cara menetapkan angka 0.0 - 1.0 untuk produk baru? Berikut panduan
+                        acuannya:
+                    </p>
+
+                    <h4 style="margin-bottom: 5px; color: #4c1d95;">1. $ (Price / Spending Power)</h4>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li><strong>0.9 - 1.0 (Mahal/Premium):</strong> Produk eksklusif, private session,
+                            atau
+                            alat
+                            canggih (>800 Poin). Contoh: <em>Sesi Mentoring</em>.</li>
+                        <li><strong>0.4 - 0.6 (Menengah):</strong> Konten standar berbayar (400-600 Poin).
+                            Contoh:
+                            <em>Video Premium</em>.
+                        </li>
+                        <li><strong>0.1 - 0.3 (Murah/Gratis):</strong> Item kecil, bonus, atau giveaway (
+                            <200 Poin). Contoh: <em>Badge/Stiker</em>.
+                        </li>
+                    </ul>
+
+                    <h4 style="margin-bottom: 5px; color: #4c1d95;">2. VARK (Karakteristik Media)</h4>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li><strong>Visual (V):</strong> Dominan gambar/video? (Video=0.9, Podcast=0.1)</li>
+                        <li><strong>Auditory (A):</strong> Dominan suara? (Podcast=0.9, E-Book=0.1)</li>
+                        <li><strong>Read/Write (R):</strong> Dominan teks? (E-Book=0.9, Video=0.2)</li>
+                        <li><strong>Kinesthetic (K):</strong> Butuh gerak/praktik? (Kit DIY=0.9, Nonton=0.1)
+                        </li>
+                    </ul>
+
+                    <h4 style="margin-bottom: 5px; color: #4c1d95;">3. Mot (Motivation Booster)</h4>
+                    <ul style="font-size: 0.9em; margin-top: 0;">
+                        <li><strong>Tinggi (0.8 - 1.0):</strong> Produk yang personal, prestisius (status
+                            social),
+                            atau sangat seru (gamified).</li>
+                        <li><strong>Sedang (0.5 - 0.7):</strong> Produk fungsional standar yang cukup
+                            membantu.
+                        </li>
+                        <li><strong>Rendah (0.1 - 0.4):</strong> Produk kebutuhan dasar atau item
+                            administratif
+                            yang
+                            tidak memicu semangat khusus.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab 1: Overview -->
+            <div id="overview-tab" class="tab-content active">
+                <div class="theory-section">
+                    <h3>🎯 Tentang Simulasi Ini</h3>
+                    <p>Simulasi ini menggunakan <strong>Q-Learning</strong>, sebuah algoritma Reinforcement
+                        Learning
+                        (RL), untuk menemukan strategi optimal dalam memberikan intervensi edukatif kepada
+                        siswa.
+                    </p>
+                    <p><strong>Tujuan:</strong> Memaksimalkan motivasi dan performa siswa dengan memilih
+                        aksi
+                        yang
+                        tepat berdasarkan kondisi siswa saat ini.</p>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🔄 Alur Kerja Simulasi</h3>
+                    <ol>
+                        <li><strong>Observasi State:</strong> Sistem mengamati kondisi siswa (motivasi, gaya
+                            belajar, engagement, performa)</li>
+                        <li><strong>Pemilihan Aksi:</strong> Agen memilih intervensi menggunakan strategi
+                            epsilon-greedy</li>
+                        <li><strong>Eksekusi & Reward:</strong> Aksi dilakukan, sistem menghitung reward
+                            berdasarkan
+                            hasil</li>
+                        <li><strong>Update Q-Table:</strong> "Memori" agen diupdate menggunakan Bellman
+                            Equation
+                        </li>
+                        <li><strong>Transisi State:</strong> Siswa beralih ke kondisi baru, proses berulang
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📊 Komponen Utama</h3>
+                    <ul>
+                        <li><strong>State Space:</strong> 144 kombinasi kondisi siswa (4×3×4×3)</li>
+                        <li><strong>Action Space:</strong> 5 Aksi Pointmarket: Reward, Misi, Beli, Hukuman,
+                            Konsultasi</li>
+                        <li><strong>Q-Table:</strong> Matriks 144×5 yang menyimpan nilai kebaikan setiap
+                            aksi
+                        </li>
+                        <li><strong>Reward Function:</strong> R = Engagement + ΔAMS_Quality - Cost</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section"
+                    style="border-top: 2px dashed #cbd5e1; margin-top: 20px; padding-top: 15px;">
+                    <h3>📘 Spesifikasi Model Pointmarket (Referensi Perumus)</h3>
+
+                    <h4>1. State Representation (VARK_MSLQ_AMS_Engagement)</h4>
+                    <p>Total kombinasi: 4 (VARK) × 3 (MSLQ) × 4 (AMS) × 3 (Engagement) = 144 States.</p>
+
+                    <div
+                        style="background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 0.9em; border: 1px solid #e2e8f0;">
+                        <strong>VARK (Gaya Belajar):</strong>
+                        <ul style="margin: 5px 0 10px 15px;">
+                            <li>Visual (V)</li>
+                            <li>Auditory (A)</li>
+                            <li>Reading-Writing (R)</li>
+                            <li>Kinestetik (K)</li>
+                        </ul>
+
+                        <strong>MSLQ (Motivasi Belajar):</strong>
+                        <ul style="margin: 5px 0 10px 15px;">
+                            <li>High Motivation (≥5.5)</li>
+                            <li>Medium Motivation (3.5 – 5.4)</li>
+                            <li>Low Motivation (&lt;3.5)</li>
+                        </ul>
+
+                        <strong>AMS (Tipe Motivasi Akademik):</strong>
+                        <ul style="margin: 5px 0 10px 15px;">
+                            <li>Intrinsic, Extrinsic, Achievement, Amotivation</li>
+                        </ul>
+
+                        <strong>Engagement Metrics (m_f_a):</strong>
+                        <p style="margin: 5px 0; font-size: 0.85em;">
+                            <em>Metrics:</em> <strong>m</strong> = mission completion, <strong>f</strong> =
+                            frequency of interaction, <strong>a</strong> = activity depth.
+                        </p>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 10px;">
+                            <tr style="background: #e2e8f0;">
+                                <th style="padding: 4px; border: 1px solid #cbd5e1;">Level</th>
+                                <th style="padding: 4px; border: 1px solid #cbd5e1;">Kode</th>
+                                <th style="padding: 4px; border: 1px solid #cbd5e1;">Kriteria (Task, Freq,
+                                    Depth)
+                                </th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;"><strong>Basic</strong>
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1; text-align: center;">
+                                    m1_f1_a1
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;">Low task completion,
+                                    Jarang
+                                    akses, Interaksi dangkal.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;"><strong>Medium</strong>
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1; text-align: center;">
+                                    m2_f2_a2
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;">Moderate completion,
+                                    Rutin
+                                    akses, Interaksi standar.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;"><strong>High</strong>
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1; text-align: center;">
+                                    m3_f3_a3
+                                </td>
+                                <td style="padding: 4px; border: 1px solid #cbd5e1;">High completion, Sangat
+                                    sering,
+                                    Rich interaction.</td>
+                            </tr>
+                        </table>
+
+                        <p style="margin-top: 10px;"><em>Contoh State:</em><br>
+                            <code>A_high_mslq_high_ams_achievement_eng_high</code><br>
+                            (Auditory, High MSLQ, Achievement AMS, High Engagement)
+                        </p>
+                    </div>
+
+                    <h4>2. Action Space (Kode Aksi)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <tr style="background: #e2e8f0;">
+                            <th style="padding: 6px; border: 1px solid #cbd5e1;">Kode</th>
+                            <th style="padding: 6px; border: 1px solid #cbd5e1;">Aksi</th>
+                            <th style="padding: 6px; border: 1px solid #cbd5e1;">Deskripsi</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">101
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;"><strong>Reward</strong>
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;">Pemberian poin, badge,
+                                leaderboard.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">105
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;"><strong>Misi</strong></td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;">Penugasan adaptif, level
+                                kontekstual.</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">102
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;"><strong>Beli Poin</strong>
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;">Akses produk/layanan
+                                marketplace.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">103
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;"><strong>Hukuman</strong>
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;">Denda/restriksi saat
+                                engagement
+                                turun.</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">106
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;"><strong>Konsultasi</strong>
+                            </td>
+                            <td style="padding: 6px; border: 1px solid #cbd5e1;">Coaching NLP untuk motivasi
+                                rendah.
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="theory-section" style="border-left-color: #f59e0b; background: #fffbeb;">
+                    <h3>💡 Perbedaan Reward (R) vs Q-Value (Q)</h3>
+                    <p>Mengapa "Reward" di kartu Keputusan Agen berbeda dengan angka di Q-Table? Karena
+                        keduanya
+                        memiliki fungsi waktu yang berbeda:</p>
+                    <ul>
+                        <li><strong>Reward (R):</strong> Feedback instan "saat ini juga". Seperti makan
+                            permen
+                            (enak
+                            sekarang, R positif).</li>
+                        <li><strong>Q-Value (Q):</strong> Nilai jangka panjang. Seperti makan sayur (R
+                            mungkin
+                            kecil, tapi Q besar untuk kesehatan masa depan).</li>
+                    </ul>
+                    <p style="font-size: 0.9em;">
+                        <strong>Prinsip:</strong> Agen Q-Learning yang cerdas tidak hanya mengejar Reward
+                        sesaat,
+                        tetapi mengejar Q-Value tertinggi (akumulasi masa depan).
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tab 2: Theory -->
+            <div id="theory-tab" class="tab-content">
+                <div class="theory-section">
+                    <h3>🧠 Reinforcement Learning & MDP Pedagogis</h3>
+                    <p>Simulasi ini memodelkan interaksi antara Guru (Agen) dan Siswa menggunakan kerangka
+                        kerja
+                        <strong>Markov Decision Process (MDP)</strong>.
+                    </p>
+
+                    <div class="research-card" style="border-left-color: #3b82f6; background: #eff6ff;">
+                        <h4 style="color: #1e40af; margin-top:0;">Apa itu MDP Pedagogis?</h4>
+                        <p style="font-size: 0.9em;">MDP adalah kerangka matematis untuk pengambilan
+                            keputusan
+                            di
+                            mana hasil bersifat sebagian acak dan sebagian di bawah kendali pembuat
+                            keputusan.
+                            Dalam
+                            konteks pendidikan:</p>
+                        <ul style="font-size: 0.95em;">
+                            <li><strong>State (S):</strong> Profil psikologis & perilaku siswa saat ini.
+                            </li>
+                            <li><strong>Action (A):</strong> Strategi intervensi/alat Pointmarket.</li>
+                            <li><strong>Transition (P):</strong> Kemungkinan perubahan kondisi siswa setelah
+                                aksi
+                                (probabilitas transisi).</li>
+                            <li><strong>Reward (R):</strong> Skor keberhasilan pedagogis (Engagement & AMS).
+                            </li>
+                            <li><strong>Discount Factor (γ):</strong> Seberapa besar agen memprioritaskan
+                                perkembangan siswa di masa depan dibandingkan hasil instan.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🎲 Q-Learning: Solusi Tanpa Model</h3>
+                    <p>Karena kita tidak pernah tahu pasti "isi kepala" siswa (Probabilitas Transisi tidak
+                        diketahui
+                        secara eksak), kita menggunakan <strong>Q-Learning</strong> (Model-Free RL).</p>
+                    <div class="formula-box">
+                        Q(s, a) = Estimasi manfaat jangka panjang jika agen mengambil aksi 'a' pada kondisi
+                        's'.
+                    </div>
+                    <p>Agen belajar secara <em>trial-and-error</em> untuk membangun sebuah "kebijakan"
+                        (Policy)
+                        yang
+                        memaksimalkan perkembangan siswa dari waktu ke waktu.</p>
+                </div>
+
+                <div class="theory-section">
+                    <h3>⚖️ Exploration vs Exploitation</h3>
+                    <p>Dilema fundamental dalam membantu siswa:</p>
+                    <ul>
+                        <li><strong>Exploitation:</strong> Menggunakan strategi yang sudah terbukti berhasil
+                            (aman).
+                        </li>
+                        <li><strong>Exploration:</strong> Mencoba pendekatan baru yang mungkin lebih efektif
+                            bagi
+                            tipe siswa tertentu.</li>
+                    </ul>
+                    <p>Solusi: <strong>Epsilon-Greedy Strategy</strong> (ε). Sebagian besar waktu agen
+                        bertindak
+                        cerdas (1-ε), namun sesekali ia bereksperimen (ε).</p>
+                </div>
+            </div>
+
+            <!-- Tab 3: Math -->
+            <div id="math-tab" class="tab-content">
+                <div class="theory-section">
+                    <h3>1. Formula Pemetaan State (Bijection Mapping)</h3>
+                    <p>Matematika untuk menerjemahkan "Profil Psikologis" yang rumit menjadi "Satu Angka
+                        Indeks"
+                        agar bisa diproses komputer.</p>
+                    <div class="formula-box">
+                        Index = V×36 + M×12 + A×3 + E
+                    </div>
+                    <p><strong>Penjelasan:</strong></p>
+                    <ul>
+                        <li>Mengubah kombinasi 4 dimensi (VARK, MSLQ, AMS, Engagement) menjadi satu angka
+                            unik
+                            (0-143).
+                        </li>
+                        <li>Memastikan setiap kondisi siswa punya "alamat" unik di memori (Q-Table)
+                            komputer.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>2. Persamaan Bellman (Q-Learning Update Rule)</h3>
+                    <p>Ini adalah "Jantung" dari kecerdasan buatan ini. Rumus ini menentukan bagaimana AI
+                        memperbarui
+                        pengetahuannya berdasarkan pengalaman baru.</p>
+                    <div class="formula-box">
+                        Q(s,a) ← (1-α)Q(s,a) + α[R + γ·max Q(s',a')]
+                    </div>
+                    <p><strong>Cara Kerja:</strong></p>
+                    <ul>
+                        <li><strong>Q(s,a) Lama:</strong> Pengetahuan sebelumnya.</li>
+                        <li><strong>R (Reward):</strong> Hasil nyata dari aksi yang baru dilakukan.</li>
+                        <li><strong>max Q(s',a'):</strong> Prediksi masa depan terbaik (visi jangka
+                            panjang).
+                        </li>
+                        <li><strong>α (Alpha):</strong> Seberapa cepat AI percaya hal baru vs memori lama.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>3. Formula Fungsi Reward (Reward Function)</h3>
+                    <p>Rumus untuk menghitung seberapa "sukses" sebuah intervensi. Tujuannya adalah
+                        memaksimalkan
+                        <strong>R<sub>total</sub></strong> dengan mencari aksi yang memberikan dampak
+                        positif
+                        besar
+                        dengan biaya/resiko sekecil mungkin.
+                    </p>
+                    <div class="formula-box">
+                        R = (w₁·ΔEngagement + w₂·ΔAMS_Quality) - Cost
+                    </div>
+                    <p><strong>Komponen:</strong></p>
+                    <p><strong>Komponen Detail & Nilai Referensi:</strong></p>
+                    <ul>
+                        <li><strong>w₁ & w₂ (Bobot/Weight):</strong> Diset <strong>1.0</strong>. Artinya
+                            Peningkatan
+                            Engagement dan Kualitas Motivasi dianggap sama pentingnya dalam simulasi ini.
+                        </li>
+                        <li><strong>ΔEngagement:</strong> Perubahan level keaktifan siswa.
+                            <br><span style="font-size:0.9em; color:#64748b;">(Naik Level = +0.5 s.d +0.8,
+                                Turun
+                                =
+                                -0.2 s.d -0.8)</span>
+                        </li>
+                        <li><strong>ΔAMS_Quality (Bonus Motivasi):</strong> Perubahan tipe motivasi ke arah
+                            yang
+                            lebih baik.
+                            <br><span style="font-size:0.9em; color:#64748b;">(Naik Level = +1.0, Tetap = 0,
+                                Turun =
+                                -1.0)</span>
+                            <div
+                                style="margin-top:5px; font-size:0.85em; background:#f0fdf4; padding:5px 8px; border-left:3px solid #16a34a; color:#166534;">
+                                <strong>Mengapa nilainya diskrit (0/1)?</strong><br>
+                                Perubahan <em>Mindset Motivasi</em> (misal dari "belajar demi nilai" menjadi
+                                "suka
+                                belajar") adalah lompatan besar dan lebih langka dibanding sekadar aktif
+                                sesaat
+                                (engagement). Maka setiap kenaikan level dihargai tinggi (+1.0).
+                            </div>
+                        </li>
+                        <li><strong>Cost (Biaya Aksi):</strong> "Harga" yang harus dibayar guru
+                            (Tenaga/Waktu/Risiko).
+                            <br><span style="font-size:0.9em; color:#64748b;">(Contoh: Reward=0.3,
+                                Hukuman=0.05,
+                                Konsultasi=0.5)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theory-section" style="border-left-color: #f59e0b; background: #fffbeb;">
+                    <h3>🔬 Reward Engineering (Prinsip Penetapan Nilai)</h3>
+                    <p>Bagaimana menentukan nilai angka untuk Manfaat (Benefit) dan Biaya (Cost)? Tidak ada
+                        aturan
+                        baku, namun kami menggunakan prinsip heuristik berikut:</p>
+
+                    <ul style="line-height: 1.6;">
+                        <li><strong>1. Prinsip Keseimbangan (Equilibrium):</strong>
+                            Aksi yang mudah/murah (seperti Hukuman/Reward) diberi Cost kecil namun Benefit
+                            rendah
+                            atau berisiko. Aksi yang sulit/mahal (Konsultasi/Misi) diberi Benefit besar.
+                            Tujuannya
+                            agar agen tidak "spamming" aksi murah.
+                        </li>
+                        <li><strong>2. Skala Relatif (Relative Scaling):</strong>
+                            Poin penting bukan nilai absolutnya, melainkan rasio antar aksi.
+                            <br><em>Contoh:</em> Cost Konsultasi (0.5) diset 10x lipat dari Cost Hukuman
+                            (0.05)
+                            untuk mencerminkan realita beban kerja guru.
+                        </li>
+                        <li><strong>3. Normalisasi (Normalization):</strong>
+                            Nilai dijaga dalam rentang kecil (-1.0 s.d +1.0) agar perhitungan matematika
+                            stabil
+                            dan
+                            mencegah "exploding gradient" pada proses belajar yang panjang.
+                        </li>
+                        <li><strong>4. Justifikasi Pedagogis:</strong>
+                            Setiap angka memiliki alasan pendidikan. Misi memiliki Benefit tinggi (0.8)
+                            karena
+                            memicu <em>Active Learning</em>, sedangkan Reward Instan memiliki Benefit rendah
+                            (0.2)
+                            karena hanya motivasi eksternal.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>4. Formula Probabilitas Keputusan (ε-Greedy)</h3>
+                    <p>Ini adalah rumus matematika untuk menentukan kapan AI harus "Eksplorasi" (coba-coba)
+                        dan
+                        kapan
+                        "Eksploitasi" (menggunakan ilmu yang sudah ada).</p>
+                    <div class="formula-box">
+                        P(acak) = ε | P(terbaik) = 1 - ε
+                    </div>
+                    <p><strong>Logika:</strong></p>
+                    <ul>
+                        <li>Jika nilai acak < Epsilon (ε): <strong>Mode Coba-Coba (Eksplorasi)</strong>. AI
+                                mencoba
+                                hal baru untuk belajar potensial strategi baru.</li>
+                        <li>Jika nilai acak ≥ Epsilon (ε): <strong>Mode Pintar (Eksploitasi)</strong>. AI
+                            menggunakan
+                            strategi terbaik yang ia tahu saat ini untuk memaksimalkan hasil.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab 4: Glossary -->
+            <div id="glossary-tab" class="tab-content">
+                <h3 style="margin-top: 0;">📖 Kamus Istilah</h3>
+
+                <div class="glossary-term">
+                    <strong>Agent (Agen)</strong><br>
+                    Entitas yang membuat keputusan dalam sistem RL. Dalam simulasi ini, agen adalah sistem
+                    yang
+                    memilih intervensi edukatif.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Alpha (α) - Learning Rate</strong><br>
+                    Parameter (0-1) yang menentukan seberapa banyak informasi baru menimpa informasi lama.
+                    α=0
+                    berarti tidak belajar sama sekali, α=1 berarti hanya mempercayai pengalaman terbaru.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Bellman Equation</strong><br>
+                    Persamaan rekursif yang menghubungkan nilai suatu state dengan nilai state berikutnya.
+                    Dasar
+                    dari dynamic programming dan Q-Learning.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Discount Factor (γ - Gamma)</strong><br>
+                    Parameter (0-1) yang menentukan pentingnya reward masa depan. γ=0 hanya peduli reward
+                    immediate,
+                    γ→1 mempertimbangkan reward jangka panjang.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Engagement</strong><br>
+                    Tingkat keterlibatan siswa dalam pembelajaran. Diukur dalam 3 level: Declining
+                    (menurun),
+                    Stable
+                    (stabil), Increasing (meningkat).
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Environment (Lingkungan)</strong><br>
+                    Sistem yang berinteraksi dengan agen. Dalam simulasi ini, environment adalah model siswa
+                    yang
+                    bereaksi terhadap intervensi.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Episode</strong><br>
+                    Satu siklus lengkap interaksi agent-environment. Dalam simulasi ini, 1 episode = 20
+                    langkah.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Epsilon (ε) - Exploration Rate</strong><br>
+                    Probabilitas untuk melakukan eksplorasi (aksi acak) daripada eksploitasi (aksi terbaik).
+                    Mengontrol trade-off explore vs exploit.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Epsilon-Greedy</strong><br>
+                    Strategi pemilihan aksi: pilih aksi acak dengan probabilitas ε, pilih aksi terbaik
+                    dengan
+                    probabilitas 1-ε.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Exploitation</strong><br>
+                    Strategi menggunakan pengetahuan saat ini untuk memaksimalkan reward. Memilih aksi yang
+                    diketahui terbaik.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Exploration</strong><br>
+                    Strategi mencoba aksi baru untuk menemukan informasi yang lebih baik. Penting untuk
+                    menghindari
+                    local optima.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Gaya Belajar (Learning Style)</strong><br>
+                    Preferensi siswa dalam menerima informasi: Visual (gambar), Auditory (suara), Read/Write
+                    (teks),
+                    Kinesthetic (praktek).
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Motivasi (Motivation)</strong><br>
+                    Tingkat dorongan internal siswa untuk belajar. Diukur dalam 3 level: Low, Moderate,
+                    High.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Performance</strong><br>
+                    Hasil belajar siswa, dikategorikan dalam kuartil: Q1 (rendah), Q2, Q3, Q4 (tinggi).
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Policy (Kebijakan) - π</strong><br>
+                    Strategi yang menentukan aksi mana yang diambil di setiap state. π(s) = a berarti "di
+                    state
+                    s,
+                    ambil action a".
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Q-Function (Action-Value Function)</strong><br>
+                    Fungsi Q(s,a) yang mengestimasi total reward yang diharapkan jika mengambil action a di
+                    state s,
+                    lalu mengikuti kebijakan optimal.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Q-Table</strong><br>
+                    Tabel/matriks yang menyimpan nilai Q untuk semua kombinasi state-action. "Memori" atau
+                    "otak"
+                    dari agen.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Reward (R)</strong><br>
+                    Sinyal feedback numerik dari environment yang menunjukkan seberapa baik aksi yang
+                    diambil.
+                    Positif = baik, negatif = buruk.
+                </div>
+
+                <div class="glossary-term">
+                    <strong>State (s)</strong><br>
+                    Representasi kondisi environment pada waktu tertentu. Dalam simulasi ini: (VARK, MSLQ,
+                    AMS
+                    Type,
+                    Engagement).
+                </div>
+
+                <div class="glossary-term">
+                    <strong>Temporal Difference (TD)</strong><br>
+                    Selisih antara estimasi reward (prediksi) dengan reward aktual yang diterima. Digunakan
+                    untuk
+                    update Q-value.
+                </div>
+            </div>
+
+            <!-- Tab 4.5: Parameter Guide -->
+            <div id="params-tab" class="tab-content">
+                <h3 style="margin-top: 0;">🎛️ Panduan Pemilihan Parameter</h3>
+                <p>Parameter α, γ, dan ε sangat mempengaruhi performa dan kecepatan pembelajaran. Berikut
+                    panduan
+                    pemilihannya:</p>
+
+                <div class="theory-section">
+                    <h3>📌 Alpha (α) - Learning Rate</h3>
+                    <p><strong>Fungsi:</strong> Mengontrol seberapa cepat agen belajar dari pengalaman baru.
+                    </p>
+
+                    <table style="width: 100%; margin: 10px 0; border-collapse: collapse; font-size: 0.9em;">
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nilai α
+                            </th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">
+                                Karakteristik
+                            </th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Kapan
+                                Digunakan
+                            </th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.01 - 0.1</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Pembelajaran lambat tapi
+                                stabil
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Environment stabil, butuh
+                                presisi
+                                tinggi</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.1 - 0.3</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Balance optimal ⭐</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Kebanyakan kasus, good
+                                starting
+                                point</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.5 - 1.0</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Pembelajaran sangat cepat,
+                                volatile
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Environment dinamis, butuh
+                                adaptasi
+                                cepat</td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size: 0.9em; color: #64748b; margin-top: 10px;">
+                        💡 <strong>Tips:</strong> Mulai dengan α=0.1. Jika grafik reward terlalu
+                        ramai/volatile,
+                        turunkan ke 0.05.
+                        Jika konvergensi terlalu lambat, naikkan ke 0.2-0.3.
+                    </p>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📌 Gamma (γ) - Discount Factor</h3>
+                    <p><strong>Fungsi:</strong> Menentukan pentingnya reward jangka panjang vs jangka
+                        pendek.
+                    </p>
+
+                    <table style="width: 100%; margin: 10px 0; border-collapse: collapse; font-size: 0.9em;">
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nilai γ
+                            </th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">
+                                Karakteristik
+                            </th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Kapan
+                                Digunakan
+                            </th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.5 - 0.7</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Fokus short-term reward
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Task dengan feedback
+                                immediate
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.8 - 0.95</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Balance optimal ⭐</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Simulasi edukatif seperti
+                                ini
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>0.95 -
+                                    0.99</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Sangat fokus long-term</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Task dengan delayed reward
+                                signifikan</td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size: 0.9em; color: #64748b; margin-top: 10px;">
+                        💡 <strong>Tips:</strong> Gunakan γ=0.9 sebagai default. Dalam konteks edukatif,
+                        kita
+                        ingin
+                        agen mempertimbangkan
+                        dampak jangka panjang intervensi terhadap siswa.
+                    </p>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📌 Epsilon (ε) - Exploration Rate</h3>
+                    <p><strong>Fungsi:</strong> Probabilitas melakukan eksplorasi (coba aksi acak) vs
+                        eksploitasi
+                        (pilih aksi terbaik).</p>
+
+                    <table style="width: 100%; margin: 10px 0; border-collapse: collapse; font-size: 0.9em;">
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Fase</th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nilai ε
+                            </th>
+                            <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Alasan
+                            </th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Awal (0-200
+                                    episode)</strong></td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">0.3 - 0.5</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Eksplorasi tinggi untuk
+                                menemukan
+                                strategi</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Tengah
+                                    (200-500)</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">0.1 - 0.2</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Balance explore-exploit
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Akhir
+                                    (>500)</strong>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">0.01 - 0.05</td>
+                            <td style="padding: 8px; border: 1px solid #cbd5e1;">Fokus eksploitasi strategi
+                                optimal
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size: 0.9em; color: #64748b; margin-top: 10px;">
+                        💡 <strong>Tips:</strong> Mulai dengan ε=0.3 untuk eksplorasi awal. Setelah 100-200
+                        episode,
+                        turunkan bertahap
+                        ke 0.1, lalu ke 0.05 setelah grafik mulai stabil. Strategi ini disebut "epsilon
+                        decay".
+                    </p>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🎯 Rekomendasi Kombinasi Parameter</h3>
+
+                    <div
+                        style="background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); margin-bottom: 15px;">
+                        <p style="margin: 0 0 10px 0;"><strong>🚀 Pembelajaran Cepat & Eksplorasi</strong>
+                        </p>
+                        <p style="margin: 0; font-size: 0.9em;">Untuk eksplorasi cepat di awal simulasi:</p>
+                        <ul style="margin: 10px 0 0 0;">
+                            <li>α = 0.3 (belajar cepat)</li>
+                            <li>γ = 0.85 (balance)</li>
+                            <li>ε = 0.4 → decay ke 0.1 (eksplorasi tinggi)</li>
+                        </ul>
+                        <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #64748b;">
+                            ✅ Konvergensi cepat, eksplorasi luas | ❌ Hasil kurang stabil, bisa noisy
+                        </p>
+                    </div>
+
+                    <div
+                        style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid var(--success); margin-bottom: 15px;">
+                        <p style="margin: 0 0 10px 0;"><strong>⭐ Pembelajaran Stabil & Presisi
+                                (REKOMENDASI)</strong></p>
+                        <p style="margin: 0; font-size: 0.9em;">Untuk hasil presisi dan penelitian:</p>
+                        <ul style="margin: 10px 0 0 0;">
+                            <li>α = 0.1 (stabil)</li>
+                            <li>γ = 0.9 (long-term oriented)</li>
+                            <li>ε = 0.1 → decay ke 0.05 (balanced)</li>
+                        </ul>
+                        <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #64748b;">
+                            ✅ Hasil stabil, presisi tinggi, cocok penelitian | ❌ Konvergensi lebih lambat
+                        </p>
+                    </div>
+
+                    <div
+                        style="background: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid var(--danger);">
+                        <p style="margin: 0 0 10px 0;"><strong>⚡ Environment Dinamis</strong></p>
+                        <p style="margin: 0; font-size: 0.9em;">Untuk kondisi yang sering berubah:</p>
+                        <ul style="margin: 10px 0 0 0;">
+                            <li>α = 0.5 (adaptasi sangat cepat)</li>
+                            <li>γ = 0.8 (fokus near-term)</li>
+                            <li>ε = 0.2 (eksplorasi konstan)</li>
+                        </ul>
+                        <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #64748b;">
+                            ✅ Cepat beradaptasi | ❌ Volatile, bisa "lupa" pembelajaran lama
+                        </p>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📊 Cara Membaca Grafik sebagai Feedback</h3>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>📈 Grafik naik terus:</strong> Pembelajaran berjalan baik → Pertahankan
+                            parameter</li>
+                        <li><strong>📊 Grafik sangat zigzag:</strong> α atau ε terlalu tinggi → Turunkan α
+                            ke
+                            0.05
+                            atau turunkan ε</li>
+                        <li><strong>➡️ Grafik datar dari awal:</strong> Tidak ada pembelajaran → Naikkan α
+                            atau
+                            naikkan ε</li>
+                        <li><strong>📉 Grafik naik lalu turun:</strong> Overfitting → Turunkan α atau
+                            gunakan
+                            epsilon decay</li>
+                    </ul>
+                </div>
+
+                <div
+                    style="background: #fff7ed; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 20px;">
+                    <p style="margin: 0; font-size: 0.9em;">
+                        ⚠️ <strong>Catatan Penting:</strong> Tidak ada kombinasi "benar" absolut. Nilai
+                        optimal
+                        bergantung pada karakteristik
+                        problem Anda. Gunakan grafik konvergensi sebagai feedback untuk fine-tuning! Untuk
+                        panduan
+                        lebih lengkap,
+                        lihat file <code>PANDUAN_PARAMETER.md</code>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tab 5: UI Guide -->
+            <div id="ui-tab" class="tab-content">
+                <div class="theory-section">
+                    <h3>🎛️ Panel Kontrol (Kiri)</h3>
+                    <ul>
+                        <li><strong>Kecepatan Simulasi:</strong> Atur kecepatan simulasi.</li>
+                        <li><strong>Alpha (α):</strong> Learning rate. Naikkan jika ingin agen cepat berubah
+                            pikiran.</li>
+                        <li><strong>Gamma (γ):</strong> Discount factor. Naikkan untuk visi jangka panjang.
+                        </li>
+                        <li><strong>Epsilon (ε):</strong> Eksplorasi. Naikkan jika agen terjebak di strategi
+                            jelek.
+                        </li>
+                        <li><strong>Reset Q-Table:</strong> Mulai ulang pembelajaran dari nol.</li>
+                    </ul>
+                    <div
+                        style="background: #eff6ff; padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary); margin-top: 15px;">
+                        <p style="margin: 0; font-size: 0.9em;">
+                            📘 <strong>Panduan Detail Parameter:</strong> Untuk panduan lengkap pemilihan
+                            nilai
+                            α,
+                            γ, dan ε,
+                            lihat file <code>PANDUAN_PARAMETER.md</code> yang berisi tabel referensi,
+                            strategi
+                            tuning,
+                            dan rekomendasi kombinasi parameter untuk berbagai skenario.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🎓 Status Siswa (Tengah Atas)</h3>
+                    <p>Menampilkan state saat ini dalam 4 dimensi:</p>
+                    <ul>
+                        <li><strong>Gaya Belajar (VARK):</strong> Visual/Auditory/ReadWrite/Kinesthetic</li>
+                        <li><strong>Motivasi (MSLQ):</strong> Low/Medium/High</li>
+                        <li><strong>Tipe AMS:</strong> Amotivation/Extrinsic/Achievement/Intrinsic</li>
+                        <li><strong>Engagement:</strong> Basic/Medium/High</li>
+                        <li><strong>ID State:</strong> Index numerik 0-143</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🤖 Keputusan Agen (Tengah)</h3>
+                    <p>Menampilkan aksi yang dipilih dan hasilnya:</p>
+                    <ul>
+                        <li><strong>Nama Aksi:</strong> Intervensi yang diambil agen</li>
+                        <li><strong>Reward Badge (Nilai Efektivitas):</strong>
+                            <ul
+                                style="margin-top: 5px; font-size: 0.9em; border-left: 2px solid #cbd5e1; padding-left: 15px;">
+                                <li style="margin-bottom: 5px;"><strong style="color: #16a34a;">Warna Hijau
+                                        (Positif):</strong> Aksi guru <strong>BERHASIL</strong>. Siswa
+                                    merespon
+                                    baik, Engagement naik, atau Motivasi membaik. <br><em>Makna bagi
+                                        Guru:</em>
+                                    "Lanjutkan strategi ini untuk tipe siswa seperti ini."</li>
+                                <li style="margin-bottom: 5px;"><strong style="color: #dc2626;">Warna Merah
+                                        (Negatif):</strong> Aksi guru <strong>GAGAL/BACKFIRE</strong>. Siswa
+                                    merasa
+                                    terbebani, demotivasi, atau 'biaya' (tenaga/waktu) aksi terlalu mahal
+                                    dibanding
+                                    hasilnya. <br><em>Makna bagi Guru:</em> "Hati-hati, strategi ini
+                                    berisiko
+                                    atau
+                                    merugikan."</li>
+                                <li><strong>Warna Abu (Netral):</strong> Dampak minimal atau impas. Tidak
+                                    ada
+                                    perubahan signifikan pada siswa.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Narasi:</strong> Penjelasan mengapa reward tersebut didapat</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🛍️ Rekomendasi Produk / CBF (Tengah)</h3>
+                    <p>Menampilkan saran produk konkret yang relevan dengan kondisi siswa dan keputusan
+                        agen.
+                    </p>
+                    <ul>
+                        <li><strong>Integrasi dengan Keputusan Agen:</strong>
+                            Produk yang muncul difilter berdasarkan aksi yang baru saja diambil agen.
+                            <br><em>Contoh:</em> Jika Agen memilih aksi <strong>Reward</strong>, maka sistem
+                            CBF
+                            hanya akan merekomendasikan produk tipe <strong>Hadiah (Badge/Voucher)</strong>.
+                            Jika
+                            Agen memilih <strong>Konsultasi</strong>, sistem mencari produk edukasi yang
+                            cocok.
+                        </li>
+                        <li><strong>Match Score (%):</strong> Seberapa cocok fitur produk (V,A,R,K,Mot,$)
+                            dengan
+                            profil siswa.</li>
+                        <li><strong>Explained AI:</strong> Penjelasan naratif mengapa produk tersebut
+                            dipilih
+                            (misal: "Cocok untuk tipe Visual").</li>
+                        <li><strong>Rumus Matematika:</strong> Klik ikon ℹ️ atau lihat detail di bawah kartu
+                            untuk
+                            melihat perhitungan vektornya.</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🧮 Perhitungan Matematis (Tengah Bawah)</h3>
+                    <p>Visualisasi real-time dari Bellman Equation:</p>
+                    <ul>
+                        <li><strong>Q<sub>new</sub>:</strong> Nilai Q hasil update (hijau)</li>
+                        <li><strong>Warna kuning:</strong> Q value lama</li>
+                        <li><strong>Warna putih:</strong> Reward yang didapat</li>
+                        <li><strong>Warna biru:</strong> Max Q dari state berikutnya</li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>📈 Grafik Konvergensi (Kanan Atas)</h3>
+                    <p>Menunjukkan rata-rata reward per 20 episode:</p>
+                    <ul>
+                        <li><strong>Garis naik:</strong> Agen makin pintar, strategi membaik</li>
+                        <li><strong>Garis datar:</strong> Konvergensi tercapai (optimal policy found)</li>
+                        <li><strong>Garis turun:</strong> Perlu adjustment parameter atau masih eksplorasi
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🧠 Q-Table Slice (Kanan Bawah)</h3>
+                    <p>Menampilkan sebagian Q-Table untuk gaya belajar saat ini:</p>
+                    <ul>
+                        <li><strong>Baris:</strong> Level performa (Q1-Q4)</li>
+                        <li><strong>Kolom:</strong> 5 aksi yang tersedia</li>
+                        <li><strong>Warna hijau:</strong> Q-value positif (aksi bagus)</li>
+                        <li><strong>Warna merah:</strong> Q-value negatif (aksi buruk)</li>
+                        <li><strong>Intensitas:</strong> Makin gelap = makin kuat nilai</li>
+                    </ul>
+
+                    <p style="margin-top: 15px;"><strong>Penjelasan Kolom (Header Tabel):</strong></p>
+                    <ul>
+                        <li><strong>AMS Type:</strong> Tipe Motivasi Akademik siswa (Baris) - Target
+                            intervensi.
+                        </li>
+                        <li><strong>AMS Type:</strong> Tipe Motivasi Akademik siswa (Baris) - Target
+                            intervensi.
+                        </li>
+                        <li><strong>Rwd:</strong> Reward (101) - Poin/Badge/Leaderboard.</li>
+                        <li><strong>Mis:</strong> Misi (105) - Penugasan adaptif & tantangan.</li>
+                        <li><strong>Buy:</strong> Beli/Tukar (102) - Akses marketplace poin.</li>
+                        <li><strong>Pun:</strong> Hukuman (103) - Denda/Restriksi akses.</li>
+                        <li><strong>Cch:</strong> Konsultasi (106) - Coaching/Bantuan personal.</li>
+                    </ul>
+
+                    <p style="margin-top: 15px; font-size: 0.9em; color: #64748b;">
+                        <strong>Cara Membaca:</strong> Setiap sel menunjukkan nilai Q untuk kombinasi [AMS
+                        Type]
+                        ×
+                        [Action].
+                        Warna Hijau = Strategi yang disarankan untuk tipe AMS tersebut.
+                    </p>
+
+                    <div
+                        style="background: #fff1f2; border: 1px solid #fecdd3; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h4 style="margin-top: 0; color: #be123c;">🚩 Troubleshooting: Kenapa Semua Merah?
+                        </h4>
+                        <p style="font-size: 0.9em; margin-bottom: 10px;">Jika satu baris Q-Table berwarna
+                            merah
+                            semua (negatif), artinya semua opsi berisiko atau memakan biaya. Solusinya:</p>
+                        <ul style="font-size: 0.9em; margin-bottom: 0; padding-left: 20px;">
+                            <li style="margin-bottom: 5px;"><strong>Pilih Loss Terkecil:</strong> Strategi
+                                optimal
+                                adalah memilih warna merah paling pudar (mendekati 0). Agen meminimalkan
+                                kerugian.
+                            </li>
+                            <li style="margin-bottom: 5px;"><strong>Paksa Eksplorasi:</strong> Naikkan
+                                <strong>Epsilon (ε)</strong> sesaat (misal ke 0.5) untuk memaksa agen
+                                mencari
+                                "Hidden Gem" yang mungkin belum dicoba.
+                            </li>
+                            <li><strong>Cek Gamma (γ):</strong> Jika Gamma rendah, agen mungkin menghindari
+                                aksi
+                                mahal yang bermanfaat jangka panjang. Naikkan Gamma (0.9).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="theory-section">
+                    <h3>🔔 Sistem Notifikasi Cerdas</h3>
+                    <p>Simulasi ini dilengkapi dengan asisten cerdas yang akan menganalisis performa
+                        pembelajaran
+                        secara real-time dan memberikan saran. Berikut adalah jenis notifikasi yang mungkin
+                        muncul:
+                    </p>
+
+                    <div style="margin-top: 10px;">
+                        <div
+                            style="background: #fffbe6; border-left: 4px solid #f59e0b; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>⚠️ Pembelajaran Lambat</strong><br>
+                            Muncul jika grafik reward datar (stagnan). <br>
+                            <em>Saran:</em> Naikkan Alpha (α) atau Epsilon (ε) agar agen lebih agresif
+                            belajar.
+                        </div>
+
+                        <div
+                            style="background: #fffbe6; border-left: 4px solid #f59e0b; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>⚠️ Grafik Terlalu Volatile</strong><br>
+                            Muncul jika grafik naik-turun sangat drastis dan tidak stabil.<br>
+                            <em>Saran:</em> Turunkan Alpha (α) agar pembelajaran lebih stabil.
+                        </div>
+
+                        <div
+                            style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>💡 Eksplorasi Terlalu Tinggi</strong><br>
+                            Muncul jika grafik zigzag tajam karena terlalu banyak aksi acak.<br>
+                            <em>Saran:</em> Turunkan Epsilon (ε) karena agen terlalu "coba-coba".
+                        </div>
+
+                        <div
+                            style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>💡 Saatnya Epsilon Decay / Fase Konvergensi</strong><br>
+                            Muncul secara otomatis pada Episode 100 dan 300.<br>
+                            <em>Saran:</em> Mengingatkan Anda untuk menurunkan Epsilon (ε) secara bertahap
+                            menuju 0
+                            (eksploitasi penuh) untuk memanen hasil belajar.
+                        </div>
+
+                        <div
+                            style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>✅ Pembelajaran Berjalan Baik</strong><br>
+                            Muncul saat tren grafik positif dan stabil.<br>
+                            <em>Saran:</em> Parameter saat ini sudah optimal. Pertahankan!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6: Cara Belajar -->
+            <div id="study-tab" class="tab-content">
+                <div class="theory-section">
+                    <h3>🎓 Panduan Eksperimen & Pembelajaran</h3>
+                    <p>Ikuti langkah-langkah terstruktur berikut untuk memahami bagaimana sistem Q-Learning
+                        ini
+                        berevolusi dari "Tidak Tahu" menjadi "Pakar":</p>
+
+                    <div class="research-card">
+                        <span class="step-badge">Fase 1</span>
+                        <h4 style="margin-top:0; color: var(--primary);">Mode Eksplorasi (Belajar Sambil
+                            Mencoba)
+                        </h4>
+                        <p><strong>Persiapan:</strong> Geser slider <strong>Epsilon (ε)</strong> ke angka
+                            <strong>0.5</strong>.
+                        </p>
+                        <p><strong>Aksi:</strong> Klik tombol Mulai. Perhatikan bagaimana agen memilih aksi
+                            secara
+                            acak. Ia sedang memetakan "Medan Tempur" dan mencatat reaksi siswa dalam memori
+                            Q-Table-nya.</p>
+                    </div>
+
+                    <div class="research-card">
+                        <span class="step-badge">Fase 2</span>
+                        <h4 style="margin-top:0; color: var(--primary);">Proses Pembaruan Pengetahuan
+                            (Update
+                            Q-Value)</h4>
+                        <p><strong>Persiapan:</strong> Fokuskan pandangan pada panel <strong>"Perhitungan
+                                Matematis"</strong> di tengah bawah.</p>
+                        <p><strong>Aksi:</strong> Perhatikan angka hijau (Q-new). Jika aksi sukses (Reward
+                            positif),
+                            nilai tersebut akan naik. Inilah saat AI "belajar" bahwa strategi tersebut
+                            efektif
+                            untuk
+                            kondisi siswa saat itu.</p>
+                    </div>
+
+                    <div class="research-card">
+                        <span class="step-badge">Fase 3</span>
+                        <h4 style="margin-top:0; color: var(--primary);">Konvergensi (Optimalisasi Strategi)
+                        </h4>
+                        <p><strong>Persiapan:</strong> Percepat simulasi dan biarkan mencapai episode > 300.
+                        </p>
+                        <p><strong>Aksi:</strong> Cek <strong>"Grafik Konvergensi"</strong>. Jika garis
+                            sudah
+                            cenderung mendatar di level reward yang tinggi, AI telah menemukan strategi
+                            optimal.
+                            Validasi ini dengan melihat kotak hijau tua di tabel <strong>"Strategi
+                                AI"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="research-card" style="background: #f8fafc;">
+                        <span class="step-badge" style="background: #64748b;">Eksperimen Pakar</span>
+                        <h4 style="margin-top:0; color: #1e293b;">Uji Stabilitas Parameter</h4>
+                        <ul style="font-size: 0.9em; margin-bottom:0;">
+                            <li><strong>Naikkan Alpha (α) ke 0.9:</strong> AI menjadi "lupa diri" (terlalu
+                                reaktif),
+                                menyebabkan grafik reward berantakan.</li>
+                            <li><strong>Turunkan Gamma (γ) ke 0.1:</strong> AI menjadi "rabun jauh" (hanya
+                                peduli
+                                hasil instan, bukan kestabilan motivasi jangka panjang).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DEFINISI KONSTANTA & STATE SPACE (SESUAI REQUEST USER) ---
+        // Model: VARK_MSLQ_AMS_Engagement
+        // Total States: 4 (VARK) x 3 (MSLQ) x 4 (AMS) x 3 (Eng) = 144 States
+
+        // 1. VARK (Gaya Belajar)
+        const VARK = ['Visual', 'Auditory', 'ReadWrite', 'Kinesthetic']; // 0, 1, 2, 3
+
+        // 2. MSLQ (Motivasi - Level)
+        const MSLQ = ['Low (<3.5)', 'Medium (3.5-5.4)', 'High (≥5.5)']; // 0, 1, 2
+
+        // 3. AMS (Tipe Motivasi Akademik)
+        // Urutan asumsi kualitas: Amotivation (Buruk) -> Extrinsic -> Achievement -> Intrinsic (Baik)
+        const AMS_TYPES = ['Amotivation', 'Extrinsic', 'Achievement', 'Intrinsic']; // 0, 1, 2, 3
+
+        // 4. Engagement Metrics (m_f_a)
+        const ENGAGEMENT = ['Basic', 'Medium', 'High']; // 0, 1, 2
+
+        const ACTIONS = [
+
+            { id: 0, code: 101, name: 'Reward (Poin/Badge)', cost: 0.3 },
+            { id: 1, code: 105, name: 'Misi/Tantangan', cost: 0.4 },
+            { id: 2, code: 102, name: 'Beli/Tukar Poin', cost: 0.1 },
+            { id: 3, code: 103, name: 'Hukuman/Denda', cost: 0.05 },
+            { id: 4, code: 106, name: 'Konsultasi (Coaching)', cost: 0.5 }
+        ];
+
+        // --- DATABASE PRODUK UNTUK CONTENT-BASED FILTERING (CBF) ---
+        // Vector Features: [Visual, Auditory, ReadWrite, Kinesthetic, MotivationBooster, PriceTier]
+        // Range: 0 (Low) - 1 (High)
+        const PRODUCTS = [
+            { id: 1, name: 'Video Tutorial Premium', type: 'Konten', features: [0.9, 0.8, 0.2, 0.1, 0.7, 0.4], icon: '🎥' },
+            { id: 2, name: 'E-Book Interaktif', type: 'Konten', features: [0.6, 0.1, 0.9, 0.2, 0.5, 0.3], icon: '📚' },
+            { id: 3, name: 'Podcast Ahli', type: 'Konten', features: [0.1, 0.9, 0.3, 0.1, 0.6, 0.3], icon: '🎧' },
+            { id: 4, name: 'Kit Praktikum DIY', type: 'Alat', features: [0.7, 0.1, 0.2, 0.9, 0.8, 0.8], icon: '🔧' },
+            { id: 5, name: 'Sesi Mentoring 1-on-1', type: 'Jasa', features: [0.5, 0.9, 0.4, 0.3, 0.9, 0.9], icon: '👨‍🏫' },
+            { id: 6, name: 'Flashcard Digital', type: 'Alat', features: [0.8, 0.2, 0.7, 0.3, 0.5, 0.2], icon: '🎴' },
+            { id: 7, name: 'Badge "Star Student"', type: 'Reward', features: [0.8, 0.1, 0.1, 0.1, 0.9, 0.1], icon: '⭐' },
+            { id: 8, name: 'Voucher Kantin', type: 'Reward', features: [0.2, 0.2, 0.2, 0.5, 0.8, 0.5], icon: '🍔' }
+        ];
+
+        function calculateCBF(stateVector, activeActionCode) {
+            // 1. Buat User Vector dari State saat ini
+            // [V, A, R, K, CurrentMotivation, SpendingPower]
+
+            // Encode VARK (One-hot encoded weight)
+            let varkVec = [0.1, 0.1, 0.1, 0.1];
+            varkVec[stateVector.vark] = 0.9; // Dominant style gets high weight
+
+            // Encode Motivation
+            let motVal = (stateVector.mslq + 1) / 3; // 0.33, 0.66, 1.0
+
+            // Encode Spending Power (based on Reward accumulation logic approximation)
+            let spendingPower = 0.5;
+            if (activeActionCode === 101) spendingPower += 0.3; // Dapat reward -> daya beli naik
+            if (activeActionCode === 102) spendingPower -= 0.2; // Beli -> daya beli turun
+
+            const userVector = [...varkVec, motVal, spendingPower];
+
+            // 2. Hitung Cosine Similarity dengan setiap produk
+            let recommendations = PRODUCTS.map(prod => {
+                const similarity = cosineSimilarity(userVector, prod.features);
+                return { ...prod, score: similarity };
+            });
+
+            // 3. Filter & Sort
+            // Jika aksi == Beli (102), tampilkan semua produk berbayar
+            // Jika aksi == Reward (101), tampilkan produk reward
+            if (activeActionCode === 101) {
+                recommendations = recommendations.filter(p => p.type === 'Reward');
+            } else if (activeActionCode === 102) {
+                recommendations = recommendations.filter(p => p.type !== 'Reward');
+            } else {
+                // Untuk aksi lain, tampilkan rekomendasi umum top 3
+                activeActionCode = 0; // trigger general
+            }
+
+            return {
+                items: recommendations.sort((a, b) => b.score - a.score).slice(0, 3),
+                userVector: userVector
+            };
+        }
+
+        function cosineSimilarity(vecA, vecB) {
+            let dotProduct = 0;
+            let normA = 0;
+            let normB = 0;
+            for (let i = 0; i < vecA.length; i++) {
+                dotProduct += vecA[i] * vecB[i];
+                normA += vecA[i] * vecA[i];
+                normB += vecB[i] * vecB[i];
+            }
+            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+        }
+
+        function renderRecommendations(recs) {
+            const container = document.getElementById('cbfContainer');
+            const explanation = document.getElementById('cbfExplanation');
+
+            container.innerHTML = '';
+
+            if (recs.items.length === 0) {
+                container.innerHTML = '<p style="color: #cbd5e1; text-align: center;">Tidak ada rekomendasi relevan saat ini.</p>';
+                return;
+            }
+
+            recs.items.forEach(item => {
+                const scorePct = (item.score * 100).toFixed(0);
+                const html = `
+                    <div class="product-card">
+                        <div class="product-icon">${item.icon}</div>
+                        <div class="product-info">
+                            <div class="product-name">${item.name}</div>
+                            <div class="product-meta">${item.type} • Kecocokan Fitur</div>
+                        </div>
+                        <div class="match-score">${scorePct}%</div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+
+            // Explained AI Logic
+            const topItem = recs.items[0];
+            const uv = recs.userVector;
+            // Find highest matching feature index
+            // Features: [V, A, R, K, Mot, Price]
+            const featureNames = ['Visual', 'Auditory', 'Read/Write', 'Kinestetik', 'Booster Motivasi', 'Kesesuaian Harga'];
+
+            let bestFeatIdx = 0;
+            let maxMul = 0;
+
+            // Math Visualization Data
+            let dotProductStr = [];
+            let dotProductSum = 0;
+            let normASum = 0;
+            let normBSum = 0;
+
+            for (let i = 0; i < 6; i++) {
+                // Similarity/Explained Logic
+                const mul = topItem.features[i] * uv[i];
+                if (mul > maxMul) {
+                    maxMul = mul;
+                    bestFeatIdx = i;
+                }
+
+                // Math details
+                const a = uv[i];
+                const b = topItem.features[i];
+                const prod = a * b;
+                dotProductSum += prod;
+                normASum += a * a;
+                normBSum += b * b;
+
+                // Show first 3 terms only to save space
+                if (i < 3) dotProductStr.push(`(${a.toFixed(1)}*${b.toFixed(1)})`);
+            }
+            if (uv.length > 3) dotProductStr.push('...');
+
+            explanation.innerHTML = `
+                Rekomendasi utama <strong>${topItem.name}</strong> dipilih karena sangat cocok dengan profil 
+                <span class="explanation-tag">${featureNames[bestFeatIdx]}</span> siswa saat ini (Score: ${topItem.score.toFixed(2)}).
+            `;
+
+            // Math Output Update
+            const normA = Math.sqrt(normASum);
+            const normB = Math.sqrt(normBSum);
+            const mathContainer = document.getElementById('cbfMathDetail');
+            mathContainer.innerHTML = `
+User Vector (A): [${uv.map(x => x.toFixed(1)).join(', ')}]
+Item Vector (B): [${topItem.features.map(x => x.toFixed(1)).join(', ')}]
+
+Dot Product (A.B) = ${dotProductSum.toFixed(3)}
+Magnitudes ||A||=${normA.toFixed(2)}, ||B||=${normB.toFixed(2)}
+
+Score = ${dotProductSum.toFixed(3)} / (${normA.toFixed(2)} * ${normB.toFixed(2)}) 
+      = <strong>${topItem.score.toFixed(4)}</strong>`;
+        }
+
+        // Q-Table: Array 144 x 5 initialized with 0
+        let Q_Table = Array(144).fill().map(() => Array(5).fill(0));
+
+        // State Siswa Saat Ini (Initial State)
+        // Format: { vark: 0, mslq: 0, ams: 1, eng: 1 }
+        let currentState = { vark: 0, mslq: 0, ams: 0, eng: 0 };
+
+        // Parameter Simulasi
+        let params = { alpha: 0.1, gamma: 0.9, epsilon: 0.1 };
+        let isRunning = false;
+        let timer = null;
+        let episode = 0;
+        let steps = 0;
+        let cumulativeReward = 0;
+        let rewardHistory = [];
+        let historyBatch = 0;
+
+        // Chart Setup
+        const ctx = document.getElementById('rewardChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Avg Reward',
+                    data: [],
+                    borderColor: '#2563eb',
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false } },
+                animation: false
+            }
+        });
+
+        function updateChart(avgReward) {
+            chart.data.labels.push(episode + 1);
+            chart.data.datasets[0].data.push(avgReward);
+            if (chart.data.labels.length > 50) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update();
+        }
+
+        // --- 2. FUNGSI INTI MATEMATIS (HELPER) ---
+
+        // Mengubah 4 dimensi menjadi 1 integer (0-143)
+        // Urutan Indexing: VARK(4) -> MSLQ(3) -> AMS(4) -> ENG(3)
+        // Rumus: V*36 + M*12 + A*3 + E
+        // Total: 4 * 3 * 4 * 3 = 144
+        function getStateIndex(v, m, a, e) {
+            return (v * 36) + (m * 12) + (a * 3) + e;
+        }
+
+        // Mendapatkan max Q untuk state tertentu
+        function getMaxQ(stateIdx) {
+            return Math.max(...Q_Table[stateIdx]);
+        }
+
+        // Mendapatkan aksi terbaik (Exploitation)
+        function getBestAction(stateIdx) {
+            const qRow = Q_Table[stateIdx];
+            let maxVal = Math.max(...qRow);
+            // Jika ada nilai sama, pilih acak
+            let indices = qRow.map((val, idx) => val === maxVal ? idx : -1).filter(idx => idx !== -1);
+            return indices[Math.floor(Math.random() * indices.length)];
+        }
+
+        // --- 3. LOGIKA LINGKUNGAN (ENVIRONMENT MOCKUP) ---
+        function simulateEnvironment(state, actionId) {
+            let r_eng = 0; // Reward perubahan engagement
+            let r_ams = 0; // Reward perubahan AMS (Qualitative shift)
+            let nextState = { ...state };
+            let narration = "";
+
+            const action = ACTIONS[actionId];
+
+            // --- LOGIKA SIMULASI RESPONS SISWA ---
+            // Action Mapping:
+            // 0: Reward (101)
+            // 1: Misi/Tantangan (105)
+            // 2: Beli/Tukar (102)
+            // 3: Hukuman (103)
+            // 4: Konsultasi (106)
+
+            // 1. Respon terhadap AMS (Tipe Motivasi)
+            if (state.ams === 0) { // Amotivation
+                if (actionId === 4) { // Konsultasi/Coaching
+                    r_ams += 0.8;
+                    narration = "Coaching personal efektif memulihkan Amotivation.";
+                    if (Math.random() > 0.4) nextState.ams = 1; // Naik ke Extrinsic
+                } else if (actionId === 3) { // Hukuman
+                    r_eng -= 0.5;
+                    narration = "Hukuman pada siswa tanpa motivasi memperburuk keadaan.";
+                } else if (actionId === 0) { // Reward
+                    r_eng += 0.2;
+                    narration = "Reward mencoba menarik perhatian, tapi dampak minim.";
+                }
+            } else if (state.ams === 1) { // Extrinsic
+                if (actionId === 0) { // Reward
+                    r_eng += 0.6;
+                    narration = "Siswa Ekstrinsik sangat responsif terhadap Poin/Badge.";
+                } else if (actionId === 2) { // Beli/Tukar
+                    r_eng += 0.7;
+                    narration = "Fitur 'Belanja' sangat memotivasi tipe Ekstrinsik.";
+                } else if (actionId === 1) { // Misi
+                    // Misi oke jika ada reward jelas
+                    r_eng += 0.3;
+                    narration = "Misi dikerjakan demi poin.";
+                }
+            } else if (state.ams === 2) { // Achievement
+                if (actionId === 1) { // Misi/Tantangan
+                    r_eng += 0.8;
+                    r_ams += 0.3;
+                    narration = "Tantangan adaptif sangat cocok untuk Achievement Oriented.";
+                    if (Math.random() > 0.6) nextState.ams = 3; // Potensi naik ke Intrinsic
+                } else if (actionId === 0) { // Reward
+                    r_eng += 0.4; // Masih suka reward sebagai validasi prestasi
+                    narration = "Reward dianggap sebagai tanda prestasi.";
+                }
+            } else if (state.ams === 3) { // Intrinsic
+                if (actionId === 0) { // Reward
+                    r_eng -= 0.1;
+                    narration = "Overjustification effect: Reward eksternal kurangi minat murni.";
+                } else if (actionId === 1) { // Misi
+                    r_eng += 0.5;
+                    r_ams += 0.5; // Memperkuat intrinsic
+                    narration = "Menikmati tantangan itu sendiri.";
+                } else if (actionId === 3) { // Hukuman
+                    r_eng -= 0.8;
+                    narration = "Kontrol eksternal keras merusak otonomi intrinsik.";
+                }
+            }
+
+            // 2. Respon terhadap VARK (Gaya Belajar)
+            // Konsultasi (Action 4) menggunakan NLP adaptif, jadi bisa cover semua, tapi lebih kuat di ReadWrite/Auditory
+            if (actionId === 4) {
+                if (state.vark === 1 || state.vark === 2) {
+                    r_eng += 0.3; // Bonus efektivitas untuk Auditory/ReadWrite
+                }
+            }
+            // Misi (Action 1) jika visual/kinestetik butuh desain bagus (asumsi sistem bagus)
+            if (actionId === 1 && state.vark === 3) {
+                // Kinestetik suka tantangan aktif
+                r_eng += 0.2;
+            }
+
+            // 3. Logika Hukuman (Action 3)
+            // Hanya efektif jika Engagement rendah tapi AMS tidak Amotivation (untuk kedisiplinan)
+            if (actionId === 3) {
+                if (state.eng === 0 && state.ams > 0) {
+                    r_eng += 0.4; // Shock therapy berhasil
+                    narration = "Denda poin menyadarkan siswa untuk kembali aktif.";
+                    nextState.eng = 1;
+                } else {
+                    r_eng -= 0.4; // Backfire
+                    narration = "Hukuman dirasa tidak adil/demotivasi.";
+                }
+            }
+
+            // 4. Update Engagement
+            if (r_eng > 0.4 && Math.random() > 0.3) {
+                nextState.eng = Math.min(2, state.eng + 1);
+            } else if (r_eng < -0.2 && Math.random() > 0.3) {
+                nextState.eng = Math.max(0, state.eng - 1);
+            }
+
+            // 4. Update MSLQ (Efek jangka panjang)
+            if (state.ams === 3 && state.eng === 2) {
+                if (Math.random() > 0.7) nextState.mslq = Math.min(2, state.mslq + 1);
+            }
+
+            // Random noise (Stokastik)
+            if (Math.random() < 0.05) {
+                nextState.eng = Math.floor(Math.random() * 3);
+            }
+
+            // Hitung Total Reward
+            // R = w1*Eng + w2*AMS_Level - Cost
+            // Kita beri bobot ke level AMS agar agen ingin meningkatkan kualitas motivasi
+            let amsBonus = (nextState.ams - state.ams) * 1.0;
+            let bonus = (nextState.eng === 2) ? 0.2 : 0;
+            let totalReward = r_eng + amsBonus + bonus - action.cost;
+
+            totalReward = Math.round(totalReward * 100) / 100;
+
+            return {
+                nextState,
+                reward: totalReward,
+                narration,
+                components: { r_eng: r_eng.toFixed(1), ams: amsBonus.toFixed(1), bonus: bonus.toFixed(1), cost: action.cost }
+            };
+        }
+
+        // --- 4. CORE LOOP SIMULASI ---
+        function step() {
+            steps++;
+
+            // 1. Identifikasi State (s)
+            const s_idx = getStateIndex(currentState.vark, currentState.mslq, currentState.ams, currentState.eng);
+
+            // 2. Pilih Aksi
+            let a_idx;
+            if (Math.random() < params.epsilon) {
+                a_idx = Math.floor(Math.random() * 5);
+            } else {
+                a_idx = getBestAction(s_idx);
+            }
+
+            // 3. Eksekusi Aksi
+            const result = simulateEnvironment(currentState, a_idx);
+            const next_s_idx = getStateIndex(result.nextState.vark, result.nextState.mslq, result.nextState.ams, result.nextState.eng);
+
+            // 4. Update Q-Table
+            const oldQ = Q_Table[s_idx][a_idx];
+            const maxQ_next = getMaxQ(next_s_idx);
+            const temporalDifference = result.reward + (params.gamma * maxQ_next) - oldQ;
+            const newQ = oldQ + (params.alpha * temporalDifference);
+            Q_Table[s_idx][a_idx] = newQ;
+
+            // 5. Update Stats
+            cumulativeReward += result.reward;
+            historyBatch += result.reward;
+
+            if (steps % 20 === 0) {
+                updateChart(historyBatch / 20);
+                historyBatch = 0;
+                episode++;
+                document.getElementById('episodeCount').innerText = episode;
+                // Random reset
+                currentState = {
+                    vark: Math.floor(Math.random() * 4),
+                    mslq: Math.floor(Math.random() * 3),
+                    ams: Math.floor(Math.random() * 4),
+                    eng: Math.floor(Math.random() * 3)
+                };
+            } else {
+                currentState = result.nextState;
+            }
+
+            updateUI(s_idx, a_idx, result.reward, oldQ, newQ, maxQ_next, result.narration, result.components);
+
+            // --- UPDATE CBF RECOMMENDATIONS ---
+            const activeActionCode = ACTIONS[a_idx].code;
+            // Gunakan 'currentState' (yang sudah diupdate ke nextState) atau state sebelumnya tergantung logika.
+            // Di sini kita gunakan state SEBELUM transisi untuk mencocokkan konteks kenapa aksi itu diambil,
+            // ATAU kita gunakan nextState untuk rekomendasi masa depan?
+            // Logikanya: Agent memilih aksi A pada State S. Maka rekomendasi produk harus relevan dengan State S dan Aksi A.
+            // Namun currentState di baris ini sudah berubah jadi nextState.
+            // Jadi kita harus rekonstruksi state lama atau simpan state lama.
+            // Untungnya s_idx masih memegang indeks state lama.
+
+            // Kita reconstruct state lama dari s_idx untuk akurasi CBF
+            let temp = s_idx;
+            const e_old = temp % 3;
+            temp = Math.floor(temp / 3);
+            const ams_old = temp % 4;
+            temp = Math.floor(temp / 4);
+            const m_old = temp % 3;
+            const v_old = Math.floor(temp / 3);
+
+            const stateForCBF = { vark: v_old, mslq: m_old, ams: ams_old, eng: e_old };
+
+            const recs = calculateCBF(stateForCBF, activeActionCode);
+            renderRecommendations(recs);
+
+            analyzePerformanceAndNotify();
+        }
+
+        // --- 5. FUNGSI UI UPDATE ---
+        function updateUI(s_idx, a_idx, reward, oldQ, newQ, maxQ_next, narration, components) {
+            // Update Labels
+            document.getElementById('dispMot').innerText = MSLQ[currentState.mslq].split(' ')[0]; // Ambil label depannya
+            document.getElementById('dispStyle').innerText = VARK[currentState.vark];
+            document.getElementById('dispEng').innerText = ENGAGEMENT[currentState.eng];
+            // AMS
+            document.getElementById('dispPerf').innerText = AMS_TYPES[currentState.ams];
+            document.getElementById('stateId').innerText = s_idx;
+
+            // Update Action Card
+            document.getElementById('actionName').innerText = ACTIONS[a_idx].name;
+            const badge = document.getElementById('rewardBadge');
+            badge.innerText = `Reward: ${reward}`;
+            badge.style.background = reward > 0 ? '#16a34a' : (reward < 0 ? '#dc2626' : '#94a3b8');
+            document.getElementById('narrative').innerText = `"${narration}"`;
+            if (components) {
+                // Format display to match theory: R = (Eng + AMS) - Cost
+                // Bonus is merged into Engagement component for display simplicity or just shown as part of the total Sum
+                // Request: "samakan sesuai dengan teks rumus" -> R = (Eng + AMS) - Cost
+
+                // We combine r_eng and bonus for the "Eng" part to keep math correct visually
+                let totalEng = parseFloat(components.r_eng) + parseFloat(components.bonus);
+
+                document.getElementById('rewardMathDetail').innerHTML =
+                    `R = (<span title="ΔEngagement + Bonus">${totalEng.toFixed(1)}</span> + <span title="ΔAMS_Quality">${components.ams}</span>) - <span title="Cost">${components.cost}</span>`;
+            }
+
+            // Math Box
+            const formulaHTML = `
+            Q<sub>new</sub> = <span style="color:#fbbf24">${oldQ.toFixed(3)}</span> + 
+            ${params.alpha} * (
+            <span style="color:#fff">${reward}</span> + 
+            ${params.gamma} * <span style="color:#60a5fa">${maxQ_next.toFixed(3)}</span> - 
+            <span style="color:#fbbf24">${oldQ.toFixed(3)}</span> )
+            <br><br>
+            <span class="math-highlight">Q<sub>new</sub> = ${newQ.toFixed(4)}</span>
+        `;
+            document.getElementById('mathOutput').innerHTML = formulaHTML;
+
+            // Stats
+            document.getElementById('stepCount').innerText = steps;
+            document.getElementById('avgReward').innerText = (cumulativeReward / steps).toFixed(3);
+
+            // --- DEKOMPOSISI STATE LAMA (s_idx) ---
+            // Kita harus merekonstruksi komponen state (V, M, A, E) dari s_idx
+            // agar Q-Table Slice menampilkan konteks yang BENAR sesuai Math & Aksi.
+            // Rumus: Index = V*36 + M*12 + A*3 + E
+            let temp = s_idx;
+            const e_old = temp % 3;
+            temp = Math.floor(temp / 3);
+            const ams_old = temp % 4;
+            temp = Math.floor(temp / 4);
+            const m_old = temp % 3;
+            const v_old = Math.floor(temp / 3);
+
+            // Update Heatmap dengan konteks State LAMA dan Action yang diambil
+            updateHeatmapTable(v_old, m_old, e_old, ams_old, a_idx);
+        }
+
+        function updateHeatmapTable(vIdx, mIdx, eIdx, targetAmsIdx, activeActionIdx) {
+            const tbody = document.getElementById('qTableBody');
+            tbody.innerHTML = '';
+            document.getElementById('tableStyleTarget').innerText = `${VARK[vIdx]} (M:${MSLQ[mIdx].split(' ')[0]}, E:${ENGAGEMENT[eIdx]})`;
+
+            // Kita tampilkan 4 baris (satu untuk setiap tipe AMS), 
+            // TAPI kolom/sel harus mencerminkan nilai Q untuk (V, M, [AMS_Row], E) yang spesifik.
+
+            for (let a = 0; a < 4; a++) {
+                // Hitung index untuk baris ini
+                const idx = getStateIndex(vIdx, mIdx, a, eIdx);
+
+                const row = document.createElement('tr');
+
+                // Label Kolom (AMS)
+                const cellLabel = document.createElement('td');
+                cellLabel.innerText = AMS_TYPES[a].substring(0, 10); // truncate
+                cellLabel.style.fontWeight = 'bold';
+
+                // Highlight label jika ini adalah AMS dari state yang aktif
+                if (a === targetAmsIdx) {
+                    cellLabel.style.backgroundColor = '#fef08a'; // Kuning muda marker
+                    cellLabel.style.border = '2px solid #eab308';
+                }
+
+                row.appendChild(cellLabel);
+
+                Q_Table[idx].forEach((val, colIdx) => {
+                    const cell = document.createElement('td');
+                    cell.innerText = val.toFixed(2);
+
+                    // Coloring logic
+                    let bg = '';
+                    if (val > 0) bg = `rgba(34, 197, 94, ${Math.min(val * 2, 1)})`;
+                    else if (val < 0) bg = `rgba(239, 68, 68, ${Math.min(Math.abs(val) * 2, 1)})`;
+                    cell.style.backgroundColor = bg;
+
+                    // Highlight CELL SPESIFIK yang baru saja diupdate
+                    if (a === targetAmsIdx && colIdx === activeActionIdx) {
+                        cell.style.border = '3px solid #000'; // Border tebal hitam
+                        cell.style.fontWeight = 'bold';
+                        cell.style.transform = 'scale(1.1)';
+                        cell.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+                        // Pastikan teks terbaca
+                        if (Math.abs(val) > 0.5) cell.style.color = 'white';
+                    }
+
+                    tbody.appendChild(row);
+                    row.appendChild(cell);
+                });
+                tbody.appendChild(row);
+            }
+        }
+
+        // --- Event Listeners and Helpers follow... ---
+        // (Sisanya sama, reset logic perlu update currentState)
+
+        // --- 6. EVENT LISTENERS ---
+        // Slider Inputs
+        document.getElementById('alphaRange').oninput = function () {
+            params.alpha = parseFloat(this.value);
+            document.getElementById('alphaVal').innerText = params.alpha;
+        }
+        document.getElementById('gammaRange').oninput = function () {
+            params.gamma = parseFloat(this.value);
+            document.getElementById('gammaVal').innerText = params.gamma;
+        }
+        document.getElementById('epsilonRange').oninput = function () {
+            params.epsilon = parseFloat(this.value);
+            document.getElementById('epsilonVal').innerText = params.epsilon;
+        }
+        document.getElementById('speedRange').oninput = function () {
+            const val = 1010 - this.value; // Invert biar kanan = cepat
+            document.getElementById('speedVal').innerText = this.value > 800 ? "Cepat" : (this.value < 200 ? "Lambat" : "Normal");
+            if (isRunning) {
+                clearInterval(timer);
+                timer = setInterval(step, val);
+            }
+        }
+
+        function toggleSimulation() {
+            const btn = document.getElementById('btnStart');
+            if (isRunning) {
+                clearInterval(timer);
+                btn.innerText = "▶ Lanjutkan Simulasi";
+                btn.classList.remove('stop');
+            } else {
+                const delay = 1010 - document.getElementById('speedRange').value;
+                timer = setInterval(step, delay);
+                btn.innerText = "⏸ Pause Simulasi";
+                btn.classList.add('stop');
+            }
+            isRunning = !isRunning;
+        }
+
+        // Update Reset 
+        function resetSimulation() {
+            if (isRunning) toggleSimulation();
+            Q_Table = Array(144).fill().map(() => Array(5).fill(0));
+            currentState = { vark: 0, mslq: 0, ams: 0, eng: 0 };
+
+            steps = 0;
+            episode = 0;
+            cumulativeReward = 0;
+            chart.data.labels = [];
+            chart.data.datasets[0].data = [];
+            chart.update();
+            updateUI(0, 0, 0, 0, 0, 0, "Memori direset.");
+            document.getElementById('episodeCount').innerText = 0;
+        }
+
+        // Init awal
+        updateUI(0, 0, 0, 0, 0, 0, "Siap memulai simulasi.");
+
+        // --- 7. MODAL & TAB CONTROLS ---
+        function openHelpModal() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        function switchTab(tabName, element) {
+            // 1. Ambil semua elemen konten
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            // 2. Ambil semua tombol tab
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+
+            // 3. Tampilkan tab yang dipilih
+            const targetId = tabName + '-tab';
+            const targetTab = document.getElementById(targetId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+                // Scroll ke atas agar konten baru terlihat
+                document.querySelector('.modal-content').scrollTop = 0;
+            } else {
+                console.error('Tab not found:', targetId);
+            }
+
+            // 4. Aktifkan tombol yang diklik
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target == modal) {
+                closeHelpModal();
+            }
+        }
+
+        // Keyboard shortcut: Press '?' to open help
+        document.addEventListener('keydown', function (event) {
+            if (event.key === '?' && event.shiftKey) {
+                openHelpModal();
+            } else if (event.key === 'Escape') {
+                closeHelpModal();
+            }
+        });
+
+        // --- 8. SMART NOTIFICATION SYSTEM ---
+        let notificationHistory = new Set();
+        let lastRewards = [];
+
+        function showNotification(title, message, type = 'info', duration = 15000) {
+            const container = document.getElementById('notificationContainer');
+            const notificationId = `${title}-${type}`;
+
+            // Prevent duplicate notifications
+            if (notificationHistory.has(notificationId)) return;
+            notificationHistory.add(notificationId);
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            const icons = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'warning': '⚠️',
+                'tip': '💡'
+            };
+
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type] || '📢'}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" title="Tutup">&times;</button>
+            `;
+
+            container.appendChild(notification);
+
+            // Timer management variables
+            let dismissTimeout;
+
+            // Function to dismiss notification
+            const dismiss = () => {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentElement) notification.remove();
+                }, 300);
+            };
+
+            // Start timer
+            const startTimer = () => {
+                dismissTimeout = setTimeout(dismiss, duration);
+            };
+
+            // Initial start
+            startTimer();
+
+            // Ergonomic feature: Pause on hover
+            notification.addEventListener('mouseenter', () => {
+                clearTimeout(dismissTimeout);
+                notification.classList.remove('hiding'); // Recover if it was just about to hide
+                notification.style.transform = "scale(1.02)"; // Subtle zoom to indicate interactivity
+                notification.style.transition = "transform 0.2s";
+            });
+
+            notification.addEventListener('mouseleave', () => {
+                notification.style.transform = "scale(1)";
+                startTimer(); // Restart full duration or maybe shorter? Let's restart full to be safe/gentle.
+            });
+
+            // Close button handler
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.onclick = () => {
+                clearTimeout(dismissTimeout);
+                dismiss();
+            };
+
+            // Allow same notification after cooldown (independent of display time)
+            setTimeout(() => {
+                notificationHistory.delete(notificationId);
+            }, Math.max(duration * 2, 60000));
+        }
+
+        function analyzePerformanceAndNotify() {
+            if (steps < 20) return;
+
+            // Track last rewards for volatility analysis
+            if (steps % 20 === 0) {
+                const avgReward = historyBatch / 20;
+                lastRewards.push(avgReward);
+                if (lastRewards.length > 5) lastRewards.shift();
+            }
+
+            // Check conditions every 50 steps
+            if (steps % 50 !== 0) return;
+
+            // 1. Check for high volatility
+            if (lastRewards.length >= 3) {
+                const variance = lastRewards.reduce((sum, val, _, arr) => {
+                    const mean = arr.reduce((a, b) => a + b) / arr.length;
+                    return sum + Math.pow(val - mean, 2);
+                }, 0) / lastRewards.length;
+                const mean = lastRewards.reduce((a, b) => a + b) / lastRewards.length;
+                const cv = Math.sqrt(variance) / Math.abs(mean);
+
+                if (cv > 0.5 && params.alpha > 0.15) {
+                    showNotification(
+                        'Grafik Terlalu Volatile',
+                        `Reward naik-turun signifikan. Coba turunkan Alpha (α) dari ${params.alpha} ke ${(params.alpha * 0.7).toFixed(2)} untuk pembelajaran lebih stabil.`,
+                        'warning'
+                    );
+                } else if (cv > 0.5 && params.epsilon > 0.2) {
+                    showNotification(
+                        'Eksplorasi Terlalu Tinggi',
+                        `Grafik zigzag mungkin karena epsilon tinggi. Coba turunkan Epsilon (ε) dari ${params.epsilon} ke ${Math.max(0.05, params.epsilon - 0.1).toFixed(2)}.`,
+                        'tip'
+                    );
+                }
+            }
+
+            // 2. Check for flat/no learning
+            if (lastRewards.length >= 4) {
+                const recentChange = Math.abs(lastRewards[lastRewards.length - 1] - lastRewards[0]);
+                const meanReward = lastRewards.reduce((a, b) => a + b) / lastRewards.length;
+
+                if (recentChange < 0.01 && Math.abs(meanReward) < 0.1 && params.alpha < 0.2) {
+                    showNotification(
+                        'Pembelajaran Lambat',
+                        `Grafik hampir datar. Coba naikkan Alpha (α) dari ${params.alpha} ke ${Math.min(0.5, params.alpha + 0.1).toFixed(2)} atau Epsilon (ε) untuk eksplorasi lebih.`,
+                        'warning'
+                    );
+                }
+            }
+
+            // 3. Epsilon decay recommendation
+            if (episode === 100 && params.epsilon > 0.2) {
+                showNotification(
+                    'Saatnya Epsilon Decay',
+                    `Anda sudah mencapai ${episode} episode. Pertimbangkan turunkan Epsilon (ε) dari ${params.epsilon} ke 0.1-0.15 untuk fokus pada eksploitasi.`,
+                    'tip'
+                );
+            } else if (episode === 300 && params.epsilon > 0.1) {
+                showNotification(
+                    'Fase Konvergensi',
+                    `Episode ${episode}: Turunkan Epsilon (ε) ke 0.05-0.08 untuk memaksimalkan performa.`,
+                    'tip'
+                );
+            }
+
+            // 4. Good performance
+            if (episode === 50 && lastRewards.length >= 2) {
+                const trend = lastRewards[lastRewards.length - 1] - lastRewards[0];
+                if (trend > 0.05) {
+                    showNotification(
+                        'Pembelajaran Berjalan Baik!',
+                        `Grafik menunjukkan tren positif. Parameter saat ini bekerja dengan baik. Pertahankan!`,
+                        'success'
+                    );
+                }
+            }
+        }
+
+        // Welcome notification
+        setTimeout(() => {
+            showNotification(
+                'Selamat Datang!',
+                'Sistem notifikasi cerdas aktif. Anda akan menerima rekomendasi otomatis untuk optimasi parameter.',
+                'info',
+                6000
+            );
+        }, 2000);
+
+    </script>
+
+</body>
+
+</html>

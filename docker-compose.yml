@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dialektika-web
+    restart: unless-stopped
+    environment:
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_NAME=${DB_NAME:-portal_berita}
+      - DB_USER=${DB_USER:-dialektika_user}
+      - DB_PASSWORD=${DB_PASSWORD:-CHANGE_ME}
+      - UPLOAD_DIR=${UPLOAD_DIR:-uploads/}
+      - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-50M}
+      - PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-50M}
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-256M}
+      - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-300}
+      - APP_ENV=${APP_ENV:-production}
+      - PHP_DISPLAY_ERRORS=${PHP_DISPLAY_ERRORS:-Off}
+    volumes:
+      - ./uploads:/var/www/html/uploads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dialektika-web.rule=Host(`dialektika.irc-enter.tech`) || Host(`yusrilhelmi.my.id`)"
+      - "traefik.http.routers.dialektika-pma.entrypoints=https"
+
+  mysql:
+    image: mysql:8.0
+    container_name: dialektika-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-CHANGE_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME:-portal_berita}
+      - MYSQL_USER=${DB_USER:-dialektika_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-CHANGE_ME}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./portal_berita.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: dialektika-phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_ARBITRARY=1
+      - UPLOAD_LIMIT=${PHP_UPLOAD_MAX_FILESIZE:-50M}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dialektika-web.rule=Host(`dialektika-data.irc-enter.tech`) || Host(`data.yusrilhelmi.my.id`)"
+      - "traefik.http.routers.dialektika-pma.entrypoints=https"
+      
+volumes:
+  mysql_data:

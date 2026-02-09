@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAI GenAI Explorer</title>
+    <!-- Menggunakan Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-slideUp { animation: slideUp 0.5s ease-out forwards; }
+        
+        /* Utility for dynamic styles */
+        .token-card { transition: all 0.5s ease; }
+        .bg-pattern { background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); }
+        
+        /* Scrollbar styling for modal */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8 flex flex-col gap-6 relative">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
+                <!-- Brain Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+                XAI GenAI Explorer
+            </h1>
+            <p class="text-slate-400 mt-2 text-sm max-w-xl">
+                Simulasi interaktif cara kerja LLM (Large Language Model) dari Tokenisasi hingga Prediksi Probabilitas.
+            </p>
+        </div>
+        
+        <!-- Controls Right -->
+        <div class="flex flex-col md:flex-row items-center gap-4">
+            <!-- Help Button -->
+            <button onclick="toggleHelp(true)" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 font-medium transition-colors text-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Pelajari Konsep
+            </button>
+
+            <!-- Speed Controls -->
+            <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <span class="text-xs font-semibold text-slate-500 uppercase px-2">Speed:</span>
+                <button onclick="setSpeed(2000, this)" class="speed-btn p-2 rounded text-slate-400 hover:text-white" id="btn-slow">Slow</button>
+                <button onclick="setSpeed(800, this)" class="speed-btn p-2 rounded bg-blue-600 text-white" id="btn-normal">Normal</button>
+                <button onclick="setSpeed(200, this)" class="speed-btn p-2 rounded text-slate-400 hover:text-white" id="btn-turbo">Turbo</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- Left Column: Input & Controls -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Input Section -->
+            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 shadow-lg">
+                <label class="text-sm font-medium text-slate-400 mb-2 block flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    Input Prompt (Prompt Pengguna)
+                </label>
+                <textarea id="input-text" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none h-24 resize-none mb-4" placeholder="Ketik pertanyaan untuk AI...">Apa ibukota dari negara Indonesia?</textarea>
+                
+                <button id="btn-generate" onclick="startSimulation()" class="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/50">
+                    <svg id="icon-play" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="icon-loading" class="w-5 h-5 animate-spin hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path></svg>
+                    <span id="btn-text">Generate Jawaban</span>
+                </button>
+            </div>
+
+            <!-- Explanation Card -->
+            <div class="bg-slate-900/50 rounded-xl p-6 border border-slate-800 flex-grow relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
+                <h3 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Apa yang terjadi?
+                </h3>
+                <div id="explanation-content" class="text-slate-300 text-sm leading-relaxed space-y-4">
+                    <p>AI menunggu input. Model ini dilatih dengan miliaran teks untuk mengenali pola bahasa.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Visualizer -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            
+            <div class="bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
+                
+                <!-- Stage Toolbar -->
+                <div class="bg-slate-800 p-3 flex justify-between items-center text-xs font-mono text-slate-400 border-b border-slate-700">
+                    <div class="flex gap-2 md:gap-4 overflow-x-auto">
+                        <span id="step-1">1. INPUT</span> <span class="text-slate-600">→</span>
+                        <span id="step-2">2. VECTOR</span> <span class="text-slate-600">→</span>
+                        <span id="step-3">3. ATTENTION</span> <span class="text-slate-600">→</span>
+                        <span id="step-4">4. OUTPUT</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span id="status-text">STANDBY</span>
+                    </div>
+                </div>
+
+                <!-- Visualization Area -->
+                <div class="flex-grow p-8 relative flex items-center justify-center bg-opacity-5 bg-pattern">
+                    
+                    <!-- IDLE Graphic -->
+                    <div id="idle-graphic" class="text-center opacity-30">
+                        <svg class="w-24 h-24 mx-auto mb-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                        <p class="text-xl">Ready to simulate Generative AI</p>
+                    </div>
+
+                    <!-- Tokens & Embedding Container -->
+                    <div id="tokens-container" class="flex flex-wrap gap-4 justify-center z-10 w-full max-w-2xl absolute top-1/3 transition-all duration-500">
+                        <!-- Tokens will be injected here JS -->
+                    </div>
+
+                    <!-- SVG Overlay for Attention Lines -->
+                    <svg id="svg-overlay" class="absolute inset-0 w-full h-full pointer-events-none z-0 hidden">
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:rgb(147, 51, 234); stop-opacity:0" />
+                                <stop offset="50%" style="stop-color:rgb(147, 51, 234); stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:rgb(147, 51, 234); stop-opacity:0" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Paths will be injected here JS -->
+                    </svg>
+
+                    <!-- Neural Layers Background -->
+                    <div id="layers-container" class="absolute inset-0 flex flex-col justify-center items-center opacity-20 pointer-events-none hidden">
+                         <!-- Layers injected via JS -->
+                    </div>
+
+                    <!-- Decoding Output Section -->
+                    <div id="decoding-container" class="w-full max-w-3xl flex flex-col items-center hidden z-20 mt-10">
+                        <div class="mb-8 p-6 bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-600 shadow-2xl w-full text-center">
+                            <p class="text-slate-400 text-xs uppercase tracking-widest mb-2">Generated Output</p>
+                            <p class="text-2xl md:text-3xl font-light text-white leading-relaxed">
+                                <span id="generated-text"></span>
+                                <span class="inline-block w-2 h-6 bg-cyan-400 ml-1 animate-pulse align-middle"></span>
+                            </p>
+                        </div>
+                        
+                        <!-- Probabilities Chart -->
+                        <div id="probs-chart" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-lg animate-slideUp hidden">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-4 h-4 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                <span class="text-sm font-bold text-slate-300">Next Token Probabilities (Top 5)</span>
+                            </div>
+                            <div id="probs-list" class="space-y-2">
+                                <!-- Bars injected JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Info Footer -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 flex items-center gap-3">
+                    <div class="bg-yellow-500/10 p-2 rounded text-yellow-500"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-200">Huge Dataset</h4>
+                      <p class="text-xs text-slate-500">Dilatih pada petabytes data.</p>
+                    </div>
+                 </div>
+                 <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 flex items-center gap-3">
+                    <div class="bg-purple-500/10 p-2 rounded text-purple-500"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg></div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-200">Transformers</h4>
+                      <p class="text-xs text-slate-500">Arsitektur paralel.</p>
+                    </div>
+                 </div>
+                 <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 flex items-center gap-3">
+                    <div class="bg-pink-500/10 p-2 rounded text-pink-500"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-200">Probabilistik</h4>
+                      <p class="text-xs text-slate-500">Memprediksi, bukan menghafal.</p>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- HELP MODAL -->
+    <div id="help-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto custom-scroll p-0 shadow-2xl relative flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
+                <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent flex items-center gap-2">
+                    <svg class="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    Konsep Dasar: LLM vs Database
+                </h2>
+                <button onclick="toggleHelp(false)" class="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 md:p-8 space-y-8 text-slate-300">
+                
+                <!-- Section 1 -->
+                <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700/50">
+                    <h3 class="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                        <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-sm font-mono">MITOS</span>
+                        Apakah AI Menyimpan Jawaban di Database?
+                    </h3>
+                    <p class="leading-relaxed">
+                        Jawabannya adalah: <strong class="text-white">TIDAK</strong>. Ini adalah perbedaan terbesar antara Google Search dan Generative AI.
+                    </p>
+                    <ul class="mt-4 space-y-2 list-disc pl-5 text-sm">
+                        <li><strong class="text-cyan-400">Di Simulasi Ini:</strong> Kami menggunakan "Database" sederhana (kunci & jawaban) agar simulasi ringan dijalankan di browser.</li>
+                        <li><strong class="text-green-400">Di AI Asli (Gemini/GPT):</strong> Tidak ada tabel jawaban. Semua informasi disimpan sebagai <strong>Parameter Matematika</strong>.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 2 -->
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4">Analogi: Perpustakaan vs Mahasiswa</h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="border border-slate-700 rounded-lg p-5 hover:bg-slate-800/30 transition-colors">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="p-2 bg-blue-900/50 rounded text-blue-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+                                <strong class="text-white">Google Search (Database)</strong>
+                            </div>
+                            <p class="text-sm text-slate-400 leading-relaxed">
+                                Seperti <strong>Pustakawan</strong>. Saat Anda bertanya, dia lari ke rak buku, mengambil dokumen yang sesuai, dan menunjukkannya kepada Anda. Jika bukunya hilang, dia tidak tahu jawabannya.
+                            </p>
+                        </div>
+                        <div class="border border-slate-700 rounded-lg p-5 hover:bg-slate-800/30 transition-colors">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="p-2 bg-purple-900/50 rounded text-purple-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
+                                <strong class="text-white">Generative AI (LLM)</strong>
+                            </div>
+                            <p class="text-sm text-slate-400 leading-relaxed">
+                                Seperti <strong>Mahasiswa Jenius</strong>. Dia sudah membaca semua buku, lalu bukunya dibakar. Saat ditanya, dia <em>mengingat kembali</em> dan <em>merangkai kalimat baru</em> berdasarkan ingatannya.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-3">Mengapa AI Sangat Cepat?</h3>
+                    <p class="text-sm leading-relaxed mb-4">
+                        Karena prosesnya bukan <strong>Pencarian (Searching)</strong>, melainkan <strong>Komputasi (Computing)</strong>.
+                    </p>
+                    <div class="bg-black/40 rounded-lg p-4 font-mono text-xs md:text-sm text-green-400 overflow-x-auto border border-slate-800">
+                        Input: "Ibukota" <br>
+                        ↓ <br>
+                        <span class="text-slate-500">// AI tidak mencari file teks. AI menghitung vektor:</span> <br>
+                        [0.23, 0.91, -0.55] x [Matrix Bobot Raksasa] = Probabilitas Tertinggi: "Jakarta" (98%)
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-slate-800 bg-slate-900 sticky bottom-0 text-center">
+                <button onclick="toggleHelp(false)" class="px-8 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-900/50">
+                    Paham, Kembali ke Simulasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let state = {
+            step: 'idle', // idle, tokenizing, embedding, attention, decoding, complete
+            speed: 1000,
+            tokens: [],
+            generatedText: "",
+            inputText: ""
+        };
+
+        // --- Elements ---
+        const els = {
+            input: document.getElementById('input-text'),
+            btn: document.getElementById('btn-generate'),
+            btnText: document.getElementById('btn-text'),
+            iconPlay: document.getElementById('icon-play'),
+            iconLoading: document.getElementById('icon-loading'),
+            explanation: document.getElementById('explanation-content'),
+            
+            // Visualizer Elements
+            idleGraphic: document.getElementById('idle-graphic'),
+            tokensContainer: document.getElementById('tokens-container'),
+            svgOverlay: document.getElementById('svg-overlay'),
+            layersContainer: document.getElementById('layers-container'),
+            decodingContainer: document.getElementById('decoding-container'),
+            generatedTextSpan: document.getElementById('generated-text'),
+            probsChart: document.getElementById('probs-chart'),
+            probsList: document.getElementById('probs-list'),
+            
+            // Steps
+            steps: [document.getElementById('step-1'), document.getElementById('step-2'), document.getElementById('step-3'), document.getElementById('step-4')],
+            statusDot: document.getElementById('status-dot'),
+            statusText: document.getElementById('status-text'),
+            
+            // Modal
+            modal: document.getElementById('help-modal')
+        };
+
+        // --- Helper Functions ---
+        function toggleHelp(show) {
+            if (show) {
+                els.modal.classList.remove('hidden');
+            } else {
+                els.modal.classList.add('hidden');
+            }
+        }
+
+        function setSpeed(ms, btn) {
+            state.speed = ms;
+            document.querySelectorAll('.speed-btn').forEach(b => {
+                b.className = "speed-btn p-2 rounded text-slate-400 hover:text-white";
+            });
+            btn.className = "speed-btn p-2 rounded bg-blue-600 text-white";
+        }
+
+        function updateStatus(stepName) {
+            state.step = stepName;
+            
+            // UI Reset
+            els.idleGraphic.classList.add('hidden');
+            
+            // Step Highlighting
+            els.steps.forEach(el => el.className = "");
+            if(stepName === 'tokenizing') els.steps[0].className = "text-yellow-400 font-bold";
+            if(stepName === 'embedding') els.steps[1].className = "text-green-400 font-bold";
+            if(stepName === 'attention') els.steps[2].className = "text-purple-400 font-bold";
+            if(stepName === 'decoding' || stepName === 'complete') els.steps[3].className = "text-pink-400 font-bold";
+
+            // Status Indicator
+            if(stepName === 'idle' || stepName === 'complete') {
+                els.statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+                els.statusText.innerText = stepName === 'idle' ? "STANDBY" : "COMPLETE";
+                
+                els.btn.disabled = false;
+                els.input.disabled = false;
+                els.btn.classList.replace('bg-slate-700', 'bg-gradient-to-r');
+                els.iconPlay.classList.remove('hidden');
+                els.iconLoading.classList.add('hidden');
+                els.btnText.innerText = stepName === 'idle' ? "Generate Jawaban" : "Generate Lagi";
+            } else {
+                els.statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                els.statusText.innerText = "PROCESSING...";
+                
+                els.btn.disabled = true;
+                els.input.disabled = true;
+                els.btn.classList.replace('bg-gradient-to-r', 'bg-slate-700');
+                els.iconPlay.classList.add('hidden');
+                els.iconLoading.classList.remove('hidden');
+                els.btnText.innerText = "Sedang Memproses...";
+            }
+
+            // Explanation Text
+            updateExplanation(stepName);
+        }
+
+        function updateExplanation(step) {
+            let html = "";
+            if (step === 'tokenizing') {
+                html = `<div class="animate-fadeIn"><p class="font-bold text-yellow-400 mb-1">Fase 1: Tokenisasi</p><p>Kalimat dipotong menjadi potongan kecil bernama <strong>Token</strong>. Setiap token diberi ID unik.</p></div>`;
+            } else if (step === 'embedding') {
+                html = `<div class="animate-fadeIn"><p class="font-bold text-green-400 mb-1">Fase 2: Embedding (Vektorisasi)</p><p>Token diubah menjadi daftar angka (Vektor). Kata bermakna mirip punya angka berdekatan.</p></div>`;
+            } else if (step === 'attention') {
+                html = `<div class="animate-fadeIn"><p class="font-bold text-purple-400 mb-1">Fase 3: Attention Mechanism</p><p>Model mencari hubungan antar kata. Garis menunjukkan kata mana yang "diperhatikan" oleh kata lain untuk memahami konteks.</p></div>`;
+            } else if (step === 'decoding') {
+                html = `<div class="animate-fadeIn"><p class="font-bold text-pink-400 mb-1">Fase 4: Prediksi & Decoding</p><p>AI menghitung probabilitas kata selanjutnya. Ia hanya menebak kata yang paling mungkin muncul.</p></div>`;
+            } else if (step === 'complete') {
+                html = `<div class="animate-fadeIn"><p class="font-bold text-cyan-400 mb-1">Selesai</p><p>Proses ini terjadi dalam milidetik di pusat data nyata.</p></div>`;
+            }
+            els.explanation.innerHTML = html;
+        }
+
+        function startSimulation() {
+            const text = els.input.value.trim();
+            if (!text) return;
+            state.inputText = text;
+
+            // Reset View
+            els.tokensContainer.innerHTML = '';
+            els.svgOverlay.innerHTML = '';
+            els.svgOverlay.classList.add('hidden');
+            els.layersContainer.innerHTML = '';
+            els.layersContainer.classList.add('hidden');
+            els.decodingContainer.classList.add('hidden');
+            els.generatedTextSpan.innerText = "";
+            els.probsChart.classList.add('hidden');
+            
+            // Start Flow
+            updateStatus('tokenizing');
+            processTokenization();
+        }
+
+        function processTokenization() {
+            setTimeout(() => {
+                const words = state.inputText.split(' ');
+                state.tokens = words.map((word, index) => ({
+                    id: index,
+                    text: word,
+                    vector: Array.from({ length: 3 }, () => Math.random().toFixed(2)),
+                    color: `hsl(${index * 40 + 200}, 70%, 60%)`
+                }));
+
+                // Render Tokens
+                els.tokensContainer.innerHTML = state.tokens.map(t => `
+                    <div class="token-card px-4 py-2 rounded-lg font-mono text-sm font-bold shadow-lg border border-slate-600" 
+                         style="background-color: ${t.color}; color: #1e293b; transform: scale(1)">
+                        ${t.text}
+                    </div>
+                `).join('');
+
+                setTimeout(() => {
+                    updateStatus('embedding');
+                    processEmbedding();
+                }, state.speed * 0.8);
+
+            }, state.speed * 0.5);
+        }
+
+        function processEmbedding() {
+            // Visual Change for Embedding
+            const tokenEls = els.tokensContainer.children;
+            
+            for(let i=0; i<tokenEls.length; i++) {
+                let el = tokenEls[i];
+                let token = state.tokens[i];
+                el.style.backgroundColor = '#1e293b';
+                el.style.color = '#4ade80';
+                el.style.transform = 'translateY(10px) scale(1.1)';
+                
+                // Add vector tooltip
+                let vecDiv = document.createElement('div');
+                vecDiv.className = "absolute -bottom-6 left-0 text-[10px] bg-black/80 text-green-400 p-1 rounded font-mono w-full text-center";
+                vecDiv.innerText = `[${token.vector[0]}..]`;
+                el.appendChild(vecDiv);
+                el.classList.add('relative');
+            }
+
+            setTimeout(() => {
+                updateStatus('attention');
+                processAttention();
+            }, state.speed);
+        }
+
+        function processAttention() {
+            els.svgOverlay.classList.remove('hidden');
+            els.layersContainer.classList.remove('hidden');
+            
+            // Reset tokens scale
+            const tokenEls = els.tokensContainer.children;
+            for(let el of tokenEls) {
+                el.style.transform = 'scale(1)';
+            }
+
+            // Draw Lines
+            let pathsHtml = "";
+            const count = state.tokens.length;
+            
+            // Create simplified curved lines based on percentage (simulating connection)
+            for(let i=0; i<count; i++) {
+                for(let j=0; j<count; j++) {
+                    if (i !== j && Math.random() > 0.7) {
+                        const startX = 20 + (i * 10);
+                        const endX = 20 + (j * 10);
+                        const controlY = 20 + (Math.random() * 40);
+                        
+                        pathsHtml += `<path d="M ${startX}% 50% Q 50% ${controlY}% ${endX}% 50%" 
+                                     stroke="url(#grad1)" stroke-width="2" fill="none" class="animate-pulse opacity-60" />`;
+                    }
+                }
+            }
+            els.svgOverlay.innerHTML = `
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:rgb(147, 51, 234); stop-opacity:0" />
+                        <stop offset="50%" style="stop-color:rgb(147, 51, 234); stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgb(147, 51, 234); stop-opacity:0" />
+                    </linearGradient>
+                </defs>
+                ${pathsHtml}`;
+
+            // Animate Layers
+            let layerCount = 0;
+            const maxLayers = 3;
+            
+            const layerInterval = setInterval(() => {
+                layerCount++;
+                els.layersContainer.innerHTML = Array.from({length: 3}, (_, i) => i + 1).map(num => `
+                    <div class="w-[90%] h-24 border-y border-dashed border-purple-500 mb-4 flex items-center justify-center transition-all ${layerCount === num ? 'bg-purple-500/20 scale-105' : ''}">
+                        <span class="text-purple-300 font-mono text-xs">Transformer Layer ${num}</span>
+                    </div>
+                `).join('');
+                
+                // Update explainer text specifically for layers
+                els.explanation.innerHTML += `<p class="text-xs text-purple-300 animate-fadeIn mt-1">> Memproses Layer ${layerCount}...</p>`;
+
+                if(layerCount >= maxLayers) {
+                    clearInterval(layerInterval);
+                    setTimeout(() => {
+                        updateStatus('decoding');
+                        processDecoding();
+                    }, state.speed * 0.5);
+                }
+            }, state.speed * 0.5);
+        }
+
+        function processDecoding() {
+            // Hide previous steps specific visuals
+            els.svgOverlay.classList.add('hidden');
+            els.layersContainer.classList.add('hidden');
+            els.tokensContainer.classList.add('opacity-50', 'blur-sm'); // Fade out tokens
+            
+            els.decodingContainer.classList.remove('hidden');
+
+            const lowerInput = state.inputText.toLowerCase();
+            let targetAnswer = "";
+
+            // --- Enhanced Knowledge Patterns ---
+            // Sistem ini mencari kecocokan kata kunci dalam input
+            const patterns = [
+                { keywords: ["ibukota", "indonesia"], answer: "Ibukota negara Indonesia adalah Jakarta." },
+                { keywords: ["ibukota", "jepang"], answer: "Ibukota negara Jepang adalah Tokyo." },
+                { keywords: ["langit", "biru"], answer: "Langit tampak biru karena fenomena Hamburan Rayleigh." },
+                { keywords: ["presiden", "pertama"], answer: "Ir. Soekarno adalah presiden pertama Indonesia." },
+                { keywords: ["1", "+", "1"], answer: "Hasil dari 1 ditambah 1 adalah 2." },
+                { keywords: ["siapa", "kamu"], answer: "Saya adalah simulasi AI sederhana untuk tujuan edukasi." },
+                { keywords: ["cara", "kerja"], answer: "Saya bekerja dengan memprediksi kata selanjutnya berdasarkan probabilitas." },
+                { keywords: ["makan", "apa"], answer: "Sebagai program komputer, saya hanya membutuhkan listrik, bukan makanan." },
+                { keywords: ["terima", "kasih"], answer: "Sama-sama! Senang bisa membantu Anda." },
+                { keywords: ["halo"], answer: "Halo! Ada yang bisa saya bantu hari ini?" },
+                { keywords: ["pagi"], answer: "Selamat pagi! Semoga hari Anda menyenangkan." }
+            ];
+
+            // Mencari kecocokan terbaik (skor tertinggi)
+            let bestMatch = null;
+            let maxScore = 0;
+
+            patterns.forEach(p => {
+                let score = 0;
+                p.keywords.forEach(k => {
+                    if (lowerInput.includes(k)) score++;
+                });
+                // Kita butuh setidaknya 1 match, dan semakin banyak match semakin spesifik
+                if (score > maxScore && score >= 1) { 
+                    maxScore = score;
+                    bestMatch = p;
+                }
+            });
+
+            // Ambang batas: Jika match cukup kuat, pakai jawaban database
+            // Jika tidak, gunakan mekanisme "Hallucination/Fallback" yang kontekstual
+            if (bestMatch && maxScore >= 1) { 
+                 targetAnswer = bestMatch.answer;
+            } else {
+                // Fallback Cerdas: Menggunakan kata dari input pengguna agar terasa "memperhatikan"
+                const inputWords = state.inputText.split(' ');
+                // Ambil kata acak dari input yang panjangnya > 3 huruf (untuk menghindari kata sambung pendek)
+                const longWords = inputWords.filter(w => w.length > 3);
+                const wordToQuote = longWords.length > 0 
+                    ? longWords[Math.floor(Math.random() * longWords.length)] 
+                    : inputWords[0];
+                
+                targetAnswer = `Maaf, data spesifik tentang "${wordToQuote || 'hal ini'}" belum ada dalam model saya. Saya terus belajar.`;
+            }
+
+            const answerWords = targetAnswer.split(' ');
+            let currentWordIndex = 0;
+
+            function generateNextWord() {
+                if (currentWordIndex >= answerWords.length) {
+                    updateStatus('complete');
+                    els.tokensContainer.classList.remove('opacity-50', 'blur-sm');
+                    els.probsChart.classList.add('hidden');
+                    return;
+                }
+
+                const nextWord = answerWords[currentWordIndex];
+                
+                // Show Chart
+                els.probsChart.classList.remove('hidden');
+                
+                // Generate Fake Probs (Visualisasi XAI)
+                const dist = [
+                    { word: nextWord, score: 0.85 + (Math.random() * 0.1), isChosen: true },
+                    { word: "...", score: 0.05, isChosen: false },
+                    { word: "adalah", score: 0.03, isChosen: false },
+                    { word: "mungkin", score: 0.02, isChosen: false },
+                    { word: "[UNK]", score: 0.01, isChosen: false },
+                ].sort((a, b) => b.score - a.score);
+
+                // Render Chart
+                els.probsList.innerHTML = dist.map(p => `
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="w-16 text-right font-mono ${p.isChosen ? 'text-cyan-400 font-bold' : 'text-slate-500'}">${p.word}</span>
+                        <div class="flex-grow h-4 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full ${p.isChosen ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-slate-600'}" style="width: ${p.score * 100}%"></div>
+                        </div>
+                        <span class="w-12 text-xs text-slate-400">${(p.score * 100).toFixed(1)}%</span>
+                    </div>
+                `).join('');
+
+                // Append text
+                els.generatedTextSpan.innerText += (els.generatedTextSpan.innerText ? " " : "") + nextWord;
+                
+                currentWordIndex++;
+                setTimeout(generateNextWord, state.speed);
+            }
+
+            generateNextWord();
+        }
+
+    </script>
+</body>
+</html>

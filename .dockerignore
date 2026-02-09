@@ -1,0 +1,47 @@
+# Ignore git directory
+.git
+.gitignore
+
+# Ignore environment files (contains sensitive data)
+.env
+.env.local
+.env.production
+
+# Ignore uploads directory (will be mounted as volume)
+uploads/*
+!uploads/.gitkeep
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore temporary files
+tmp/
+temp/
+cache/
+
+# Ignore node_modules (if any)
+node_modules/
+
+# Ignore composer vendor (if using Composer)
+vendor/
+
+# Ignore Docker volumes data
+mysql_data/
+uploads_data/
+
+# Keep Docker files but ignore Docker Compose override
+!Dockerfile
+!docker-compose.yml
+docker-compose.override.yml
