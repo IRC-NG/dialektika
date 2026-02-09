@@ -39,6 +39,8 @@ RUN mkdir -p /var/www/html/uploads \
     && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/uploads
 
+COPY ./uploads /var/www/html/uploads
+
 # Copy and configure entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
