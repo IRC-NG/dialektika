@@ -21,10 +21,6 @@ services:
       - PHP_DISPLAY_ERRORS=${PHP_DISPLAY_ERRORS:-Off}
     volumes:
       - ./uploads:/var/www/html/uploads
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dialektika-web.rule=Host(`dialektika.irc-enter.tech`) || Host(`yusrilhelmi.my.id`)"
-      - "traefik.http.routers.dialektika-web.entrypoints=https"
 
   mysql:
     image: mysql:8.0
@@ -48,10 +44,6 @@ services:
       - PMA_PORT=3306
       - PMA_ARBITRARY=1
       - UPLOAD_LIMIT=${PHP_UPLOAD_MAX_FILESIZE:-50M}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dialektika-pma.rule=Host(`dialektika-data.irc-enter.tech`) || Host(`data.yusrilhelmi.my.id`)"
-      - "traefik.http.routers.dialektika-pma.entrypoints=https"
       
 volumes:
   mysql_data:
