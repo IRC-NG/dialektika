@@ -19,8 +19,6 @@ services:
       - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-300}
       - APP_ENV=${APP_ENV:-production}
       - PHP_DISPLAY_ERRORS=${PHP_DISPLAY_ERRORS:-Off}
-    volumes:
-      - ./uploads:/var/www/html/uploads
 
   mysql:
     image: mysql:8.0
