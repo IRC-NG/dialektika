@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infografis: Optimasi Stokastik Motivasi Siswa</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #e2e8f0;
+            color: var(--primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            font-weight: 300;
+            color: #475569;
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .diagram-container {
+            display: grid;
+            grid-template-areas:
+                "state agent action"
+                "env reward cbf";
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            position: relative;
+            transition: transform 0.2s;
+            border-left: 5px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .card-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .section-label {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        /* Specific Areas */
+        #area-state {
+            grid-area: state;
+            border-left-color: var(--secondary);
+        }
+
+        #area-agent {
+            grid-area: agent;
+            border-left-color: var(--purple);
+            background: #fdf4ff;
+            /* Highlight agent */
+        }
+
+        #area-action {
+            grid-area: action;
+            border-left-color: var(--warning);
+        }
+
+        #area-env {
+            grid-area: env;
+            border-left-color: var(--accent);
+        }
+
+        #area-reward {
+            grid-area: reward;
+            border-left-color: var(--danger);
+        }
+
+        #area-cbf {
+            grid-area: cbf;
+            border-left-color: #06b6d4;
+            background: #ecfeff;
+        }
+
+        /* Flow Arrows CSS Drawing */
+        .arrow {
+            position: absolute;
+            z-index: -1;
+            border: 2px dashed #94a3b8;
+        }
+
+        .content-list {
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: bold;
+            color: white;
+            background: #94a3b8;
+            margin-right: 5px;
+        }
+
+        .math-box {
+            background: #1e293b;
+            color: #a5f3fc;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        /* Overlay for decorative connectors */
+        .connector {
+            position: absolute;
+            background: #cbd5e1;
+            z-index: -1;
+        }
+
+        .description {
+            font-size: 0.9em;
+            color: #475569;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .diagram-container {
+                grid-template-areas:
+                    "state"
+                    "agent"
+                    "action"
+                    "env"
+                    "reward"
+                    "cbf";
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="section-label">INFOGRAFIS SISTEM</div>
+        <h1>Optimasi Stokastik Motivasi Siswa & Rekomendasi Produk</h1>
+        <h2>"Kerangka Kerja Q-Learning CBF dengan Pembentukan Reward Multi-Objektif"</h2>
+    </header>
+
+    <div class="diagram-container">
+
+        <!-- 1. STATE SPACE -->
+        <div class="card" id="area-state">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">🔍</span> 1. State Space (Observasi)
+            </div>
+            <p class="description">Sistem mendeteksi kondisi psikometrik siswa secara real-time dalam 4 dimensi:</p>
+            <ul class="content-list">
+                <li><span class="badge" style="background:var(--secondary)">VARK</span> Gaya Belajar
+                    (Visual/Auditory...)</li>
+                <li><span class="badge" style="background:var(--secondary)">MSLQ</span> Level Motivasi (Low/Med/High)
+                </li>
+                <li><span class="badge" style="background:var(--secondary)">AMS</span> Tipe Motivasi
+                    (Intrinsic/Extrinsic...)</li>
+                <li><span class="badge" style="background:var(--secondary)">Eng</span> Engagement (Keaktifan)</li>
+            </ul>
+        </div>
+
+        <!-- 2. AGENT LEARNING -->
+        <div class="card" id="area-agent">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">🧠</span> 2. Agent (Q-Learning Core)
+            </div>
+            <p class="description">Otak AI yang memaksimalkan reward jangka panjang menggunakan memori (Q-Table).</p>
+
+            <div class="math-box">
+                Q(s,a) ← (1-α)Q(s,a) + α[R + γ·max Q(s',a')]
+            </div>
+
+            <div style="margin-top:10px; font-size: 0.85em;">
+                <strong>Strategi:</strong> Epsilon-Greedy (Exploration vs Exploitation)
+            </div>
+        </div>
+
+        <!-- 3. ACTION SPACE -->
+        <div class="card" id="area-action">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">⚡</span> 3. Action Space (Intervensi)
+            </div>
+            <p class="description">Agen memilih aksi pedagogis optimal berdasarkan state:</p>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                <span class="badge" style="background:var(--warning)">Reward/Poin</span>
+                <span class="badge" style="background:var(--warning)">Misi</span>
+                <span class="badge" style="background:var(--warning)">Beli/Tukar Poin</span>
+                <span class="badge" style="background:var(--warning)">Konsultasi</span>
+                <span class="badge" style="background:var(--warning)">Hukuman</span>
+            </div>
+        </div>
+
+        <!-- 4. ENVIRONMENT -->
+        <div class="card" id="area-env">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">🏫</span> 4. Environment (Siswa)
+            </div>
+            <p class="description">Simulasi respons psikologis siswa terhadap intervensi.</p>
+            <ul class="content-list">
+                <li>Respon Stokastik (Probabilistik)</li>
+                <li>Perubahan State (Next State S')</li>
+                <li>Dinamika Motivasi & Engagement</li>
+            </ul>
+        </div>
+
+        <!-- 5. REWARD FUNCTION -->
+        <div class="card" id="area-reward">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">🎁</span> 5. Multi-Objective Reward
+            </div>
+            <p class="description">Fungsi tujuan untuk mengevaluasi keberhasilan intervensi.</p>
+            <div class="math-box" style="background: #fff1f2; color: #be123c; border: 1px solid #fda4af;">
+                R = (w₁·ΔEngagement + w₂·ΔAMS) - Cost
+            </div>
+            <p style="font-size: 0.85em; margin-top:5px;">
+                Ekuilibrium antara peningkatan siswa (Benefit) dan beban kerja guru (Cost).
+            </p>
+        </div>
+
+        <!-- 6. CBF SYSTEM -->
+        <div class="card" id="area-cbf">
+            <div class="card-title">
+                <span style="font-size: 1.5em;">🛍️</span> 6. RecSys (Parallel CBF)
+            </div>
+            <p class="description">Sistem rekomendasi produk berbasis konten berjalan paralel.</p>
+            <div class="math-box" style="background: #ecfeff; color: #0e7490; border: 1px solid #67e8f9;">
+                Sim(User, Item) = Cosine(Vector_U, Vector_I)
+            </div>
+            <ul class="content-list" style="margin-top:10px;">
+                <li>Input: Profil Siswa + Aksi Agen</li>
+                <li>Output: Item Konkret (e.g., E-Book, Badge)</li>
+                <li>Feature: VARK, Motivation, Spending Power ($)</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- SVG Arrows for visual flow -->
+    <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#cbd5e1" />
+            </marker>
+        </defs>
+        <!-- Lines will be drawn conceptually by layout logic, hard to perfect absolute SVG in code generation without exact pixel knowledge. 
+             Instead, we use CSS connection logic in a real chart, but here purely informative divs. 
+             The grid layout implies the flow: 
+             State -> Agent -> Action -> (Env & CBF) -> Reward -> Back to State (Cycle)
+        -->
+    </svg>
+
+    <footer style="margin-top: 50px; text-align: center; font-size: 0.8em; color: #94a3b8;">
+        &copy; 2025 Penelitian Motivational Engine. Generated for visualization purposes.
+    </footer>
+
+</body>
+
+</html>
